@@ -22,16 +22,16 @@ This Docker image contains all dependencies needed to build Vox for all supporte
 
 ```bash
 # From the repository root
-docker build -t ghcr.io/YOUR_USERNAME/vox-builder:latest -f docker/builder/Dockerfile .
+docker build -t ghcr.io/d-mozulyov/vox-builder:latest -f docker/builder/Dockerfile .
 ```
 
-Replace `YOUR_USERNAME` with your GitHub username.
+For forks, replace `d-mozulyov` with your GitHub username.
 
 ### Testing the Image
 
 ```bash
 # Run a container to test
-docker run --rm -it ghcr.io/YOUR_USERNAME/vox-builder:latest bash
+docker run --rm -it ghcr.io/d-mozulyov/vox-builder:latest bash
 
 # Inside the container, verify tools
 go version
@@ -46,18 +46,18 @@ aarch64-linux-musl-gcc --version
 ```bash
 # Create a Personal Access Token (PAT) with 'write:packages' scope
 # Then login:
-echo YOUR_PAT | docker login ghcr.io -u YOUR_USERNAME --password-stdin
+echo YOUR_PAT | docker login ghcr.io -u d-mozulyov --password-stdin
 ```
 
 ### 2. Push the Image
 
 ```bash
-docker push ghcr.io/YOUR_USERNAME/vox-builder:latest
+docker push ghcr.io/d-mozulyov/vox-builder:latest
 ```
 
 ### 3. Make the Image Public
 
-1. Go to https://github.com/YOUR_USERNAME?tab=packages
+1. Go to https://github.com/d-mozulyov?tab=packages
 2. Find the `vox-builder` package
 3. Click on it
 4. Go to "Package settings"
@@ -70,13 +70,26 @@ You can use this image for local development to ensure consistency with CI:
 
 ```bash
 # Run build in container
-docker run --rm -v $(pwd):/workspace ghcr.io/YOUR_USERNAME/vox-builder:latest \
+docker run --rm -v $(pwd):/workspace ghcr.io/d-mozulyov/vox-builder:latest \
   go build -o vox ./cmd/vox
 
 # Run tests in container
-docker run --rm -v $(pwd):/workspace ghcr.io/YOUR_USERNAME/vox-builder:latest \
+docker run --rm -v $(pwd):/workspace ghcr.io/d-mozulyov/vox-builder:latest \
   bash -c "Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 & export DISPLAY=:99.0 && sleep 1 && go test ./..."
 ```
+
+## For Forks and Contributors
+
+If you fork this project and want to use your own Docker image:
+
+1. Build and publish your image: `ghcr.io/yourusername/vox-builder:latest`
+2. In your fork's GitHub repository settings:
+   - Go to: Settings → Secrets and variables → Actions → Variables
+   - Create a variable named `BUILDER_IMAGE`
+   - Set value to: `ghcr.io/yourusername/vox-builder:latest`
+3. The workflow will automatically use your image
+
+The main repository uses: `ghcr.io/d-mozulyov/vox-builder:latest`
 
 ## Updating the Image
 
@@ -88,11 +101,16 @@ When dependencies change:
 4. Update GitHub Actions workflows if needed
 
 ```bash
-docker build -t ghcr.io/YOUR_USERNAME/vox-builder:v1.1 -f docker/builder/Dockerfile .
-docker tag ghcr.io/YOUR_USERNAME/vox-builder:v1.1 ghcr.io/YOUR_USERNAME/vox-builder:latest
-docker push ghcr.io/YOUR_USERNAME/vox-builder:v1.1
-docker push ghcr.io/YOUR_USERNAME/vox-builder:latest
+docker build -t ghcr.io/d-mozulyov/vox-builder:v1.1 -f docker/builder/Dockerfile .
+docker tag ghcr.io/d-mozulyov/vox-builder:v1.1 ghcr.io/d-mozulyov/vox-builder:latest
+docker push ghcr.io/d-mozulyov/vox-builder:v1.1
+docker push ghcr.io/d-mozulyov/vox-builder:latest
 ```
+
+Or use the automated workflow:
+- Go to: https://github.com/d-mozulyov/Vox/actions
+- Select "Build Docker Image"
+- Click "Run workflow"
 
 ## Image Size
 

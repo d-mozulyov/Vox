@@ -1,9 +1,5 @@
 name: Build and Release
 
-# IMPORTANT: Before using this workflow, replace REPLACE_WITH_USERNAME
-# with your GitHub username in the container image URLs below.
-# Example: ghcr.io/yourusername/vox-builder:latest
-
 on:
   push:
     branches: [ main, develop ]
@@ -20,7 +16,7 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/REPLACE_WITH_USERNAME/vox-builder:latest
+      image: ${{ vars.BUILDER_IMAGE || 'ghcr.io/d-mozulyov/vox-builder:latest' }}
 
     steps:
     - name: Checkout code
@@ -49,7 +45,7 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/REPLACE_WITH_USERNAME/vox-builder:latest
+      image: ${{ vars.BUILDER_IMAGE || 'ghcr.io/d-mozulyov/vox-builder:latest' }}
     if: startsWith(github.ref, 'refs/tags/v')
 
     steps:
