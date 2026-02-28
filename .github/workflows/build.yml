@@ -12,8 +12,8 @@ permissions:
   contents: write
 
 jobs:
-  build:
-    name: Build
+  test:
+    name: Test
     runs-on: ubuntu-latest
 
     steps:
@@ -26,35 +26,74 @@ jobs:
         go-version: '1.21'
 
     - name: Run tests
-      run: go test -v ./...
+      run: go test ./...
+
+  build:
+    name: Build
+    needs: test
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+
+    - name: Install musl tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y musl-tools musl-dev
+
+        # Install musl cross-compiler for arm64
+        wget https://musl.cc/aarch64-linux-musl-cross.tgz
+        tar -xzf aarch64-linux-musl-cross.tgz
+        sudo mv aarch64-linux-musl-cross /opt/
+        echo "/opt/aarch64-linux-musl-cross/bin" >> $GITHUB_PATH
 
     - name: Build for all platforms
-      if: startsWith(github.ref, 'refs/tags/v')
       run: |
         # Extract version from tag (remove 'v' prefix)
         VERSION="${GITHUB_REF_NAME#v}"
+        BUILD_TIME=$(date -u '+%Y-%m-%d_%H:%M:%S')
+        LDFLAGS="-s -w -X main.Version=${VERSION} -X main.BuildTime=${BUILD_TIME}"
 
         # Create output directory
         mkdir -p dist
 
-        # Build for each platform
-        platforms=("windows/amd64" "windows/arm64" "linux/amd64" "linux/arm64" "darwin/amd64" "darwin/arm64")
+        echo "Building Vox version ${VERSION}"
+        echo "================================"
 
-        for platform in "${platforms[@]}"; do
-          IFS='/' read -r GOOS GOARCH <<< "$platform"
-          output_name="vox-${GOOS}-${GOARCH}"
+        # Build Windows binaries
+        echo "Building for Windows amd64..."
+        GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -ldflags "${LDFLAGS}" -o "dist/vox-windows-amd64.exe" ./cmd/vox
 
-          if [ "$GOOS" = "windows" ]; then
-            output_name="${output_name}.exe"
-          fi
+        echo "Building for Windows arm64..."
+        GOOS=windows GOARCH=arm64 CGO_ENABLED=0 go build -ldflags "${LDFLAGS}" -o "dist/vox-windows-arm64.exe" ./cmd/vox
 
-          echo "Building for ${GOOS}/${GOARCH}..."
-          GOOS=$GOOS GOARCH=$GOARCH go build -ldflags "-s -w -X main.Version=${VERSION}" -o "dist/${output_name}" ./cmd/vox
-        done
+        # Build Linux binaries with musl for maximum compatibility
+        echo "Building for Linux amd64 (with musl)..."
+        GOOS=linux GOARCH=amd64 CGO_ENABLED=1 CC=musl-gcc go build -ldflags "${LDFLAGS} -linkmode external -extldflags '-static'" -o "dist/vox-linux-amd64" ./cmd/vox
+
+        echo "Building for Linux arm64 (with musl)..."
+        GOOS=linux GOARCH=arm64 CGO_ENABLED=1 CC=/opt/aarch64-linux-musl-cross/bin/aarch64-linux-musl-gcc go build -ldflags "${LDFLAGS} -linkmode external -extldflags '-static'" -o "dist/vox-linux-arm64" ./cmd/vox
+
+        # Build macOS binaries
+        echo "Building for macOS amd64..."
+        GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -ldflags "${LDFLAGS}" -o "dist/vox-darwin-amd64" ./cmd/vox
+
+        echo "Building for macOS arm64..."
+        GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -ldflags "${LDFLAGS}" -o "dist/vox-darwin-arm64" ./cmd/vox
+
+        echo "================================"
+        echo "Build complete!"
+        ls -lh dist/
       shell: bash
 
     - name: Upload artifacts
-      if: startsWith(github.ref, 'refs/tags/v')
       uses: actions/upload-artifact@v4
       with:
         name: vox-binaries
@@ -82,5 +121,6 @@ jobs:
         files: dist/*
         draft: false
         prerelease: false
+        generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
