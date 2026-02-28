@@ -29,7 +29,8 @@ RUN apk add --no-cache \
     openssl-dev \
     patch \
     bsd-compat-headers \
-    linux-headers
+    linux-headers \
+    musl-fts-dev
 
 # Install ARM64 cross-compiler (musl)
 RUN wget https://musl.cc/aarch64-linux-musl-cross.tgz && \
