@@ -6,12 +6,23 @@ This Docker image contains all dependencies needed to build Vox for all supporte
 
 ## Contents
 
-- Ubuntu 22.04 base
+- Alpine Linux 3.19 (musl-based)
 - Go 1.21.6
-- musl-tools and musl-dev for static Linux builds
+- musl gcc for native Linux builds
 - aarch64-linux-musl-cross for ARM64 Linux cross-compilation
-- All required development libraries (ALSA, X11, AppIndicator, etc.)
+- All required development libraries (ALSA, X11, AppIndicator, GTK, etc.)
 - Xvfb for headless testing
+
+## Build Strategy
+
+Linux binaries are built with musl for maximum compatibility and static linking. Alpine Linux is used as the base image because it's natively built on musl, avoiding glibc/musl conflicts.
+
+The project depends on CGO libraries:
+- `github.com/hajimehoshi/oto` requires ALSA
+- `golang.design/x/hotkey` requires X11
+- `github.com/getlantern/systray` requires GTK/AppIndicator
+
+Using Alpine's musl-based packages ensures all libraries are compatible with static linking.
 
 ## Building the Image
 
@@ -37,7 +48,7 @@ docker run --rm -it ghcr.io/d-mozulyov/vox-builder:latest bash
 
 # Inside the container, verify tools
 go version
-musl-gcc --version
+gcc --version
 aarch64-linux-musl-gcc --version
 ```
 

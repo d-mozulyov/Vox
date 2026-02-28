@@ -99,10 +99,10 @@ jobs:
 
         # Build Linux binaries with musl for maximum compatibility
         echo "Building for Linux amd64 (with musl)..."
-        GOOS=linux GOARCH=amd64 CGO_ENABLED=1 CC=musl-gcc go build -ldflags "${LDFLAGS} -linkmode external -extldflags '-static'" -o "dist/vox-linux-amd64" ./cmd/vox
+        GOOS=linux GOARCH=amd64 CGO_ENABLED=1 CC=gcc go build -ldflags "${LDFLAGS} -linkmode external -extldflags '-static'" -o "dist/vox-linux-amd64" ./cmd/vox
 
         echo "Building for Linux arm64 (with musl)..."
-        GOOS=linux GOARCH=arm64 CGO_ENABLED=1 CC=/opt/aarch64-linux-musl-cross/bin/aarch64-linux-musl-gcc go build -ldflags "${LDFLAGS} -linkmode external -extldflags '-static'" -o "dist/vox-linux-arm64" ./cmd/vox
+        GOOS=linux GOARCH=arm64 CGO_ENABLED=1 CC=aarch64-linux-musl-gcc go build -ldflags "${LDFLAGS} -linkmode external -extldflags '-static'" -o "dist/vox-linux-arm64" ./cmd/vox
 
         # Build macOS binaries
         echo "Building for macOS amd64..."
