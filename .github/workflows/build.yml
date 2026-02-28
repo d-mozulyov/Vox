@@ -76,6 +76,9 @@ jobs:
 
     - name: Build for all platforms
       run: |
+        # Configure Git to trust the workspace directory
+        git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
         # Extract version from tag (remove 'v' prefix)
         VERSION="${GITHUB_REF_NAME#v}"
         BUILD_TIME=$(date -u '+%Y-%m-%d_%H:%M:%S')
