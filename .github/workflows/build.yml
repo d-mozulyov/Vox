@@ -25,6 +25,19 @@ jobs:
       with:
         go-version: '1.21'
 
+    - name: Install Linux dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          libasound2-dev \
+          libx11-dev \
+          libxcursor-dev \
+          libxrandr-dev \
+          libxinerama-dev \
+          libxi-dev \
+          libgl1-mesa-dev \
+          libayatana-appindicator3-dev
+
     - name: Run tests
       run: go test ./...
 
@@ -46,7 +59,17 @@ jobs:
     - name: Install musl tools
       run: |
         sudo apt-get update
-        sudo apt-get install -y musl-tools musl-dev
+        sudo apt-get install -y \
+          musl-tools \
+          musl-dev \
+          libasound2-dev \
+          libx11-dev \
+          libxcursor-dev \
+          libxrandr-dev \
+          libxinerama-dev \
+          libxi-dev \
+          libgl1-mesa-dev \
+          libayatana-appindicator3-dev
 
         # Install musl cross-compiler for arm64
         wget https://musl.cc/aarch64-linux-musl-cross.tgz
