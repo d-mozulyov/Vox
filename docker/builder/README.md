@@ -15,14 +15,14 @@ This Docker image contains all dependencies needed to build Vox for all supporte
 
 ## Build Strategy
 
-Linux binaries are built with musl for maximum compatibility and static linking. Alpine Linux is used as the base image because it's natively built on musl, avoiding glibc/musl conflicts.
+Linux binaries are built with musl using dynamic linking. Alpine Linux is used as the base image because it's natively built on musl.
 
 The project depends on CGO libraries:
 - `github.com/hajimehoshi/oto` requires ALSA
 - `golang.design/x/hotkey` requires X11
 - `github.com/getlantern/systray` requires GTK/AppIndicator
 
-Using Alpine's musl-based packages ensures all libraries are compatible with static linking.
+Static linking with all these libraries is complex in Alpine due to missing static packages. Dynamic linking provides working binaries that depend on system libraries (musl-based).
 
 ## Building the Image
 
