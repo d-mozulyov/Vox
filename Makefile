@@ -12,6 +12,13 @@ DIST_DIR := dist
 # Go build command
 GO_BUILD := go build -buildvcs=false -ldflags "$(LDFLAGS)"
 
+# ARM64 cross-compilation sysroot (populated in Docker builder image)
+AARCH64_SYSROOT := /opt/aarch64-sysroot
+
+# Detect osxcross compiler (handles varying darwin version suffix)
+OSXCROSS_CC_AMD64 := $(shell ls /opt/osxcross/bin/x86_64-apple-darwin*-clang 2>/dev/null | head -1)
+OSXCROSS_CC_ARM64 := $(shell ls /opt/osxcross/bin/aarch64-apple-darwin*-clang 2>/dev/null | head -1)
+
 # Targets
 .PHONY: all clean test windows-amd64 windows-arm64 linux-amd64 linux-arm64 darwin-amd64 darwin-arm64
 
@@ -52,9 +59,6 @@ linux-amd64: $(DIST_DIR)
 	@echo "Building for Linux amd64..."
 	@CGO_ENABLED=1 GOOS=linux GOARCH=amd64 $(GO_BUILD) -o $(DIST_DIR)/vox-linux-amd64 ./cmd/vox
 
-# ARM64 cross-compilation sysroot (populated in Docker builder image)
-AARCH64_SYSROOT := /opt/aarch64-sysroot
-
 # Linux arm64
 linux-arm64: $(DIST_DIR)
 	@echo "Building for Linux arm64..."
@@ -69,12 +73,16 @@ linux-arm64: $(DIST_DIR)
 # macOS amd64
 darwin-amd64: $(DIST_DIR)
 	@echo "Building for macOS amd64..."
-	@CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GO_BUILD) -o $(DIST_DIR)/vox-darwin-amd64 ./cmd/vox
+	@CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 \
+	CC="$(OSXCROSS_CC_AMD64)" \
+	$(GO_BUILD) -o $(DIST_DIR)/vox-darwin-amd64 ./cmd/vox
 
 # macOS arm64
 darwin-arm64: $(DIST_DIR)
 	@echo "Building for macOS arm64..."
-	@CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 $(GO_BUILD) -o $(DIST_DIR)/vox-darwin-arm64 ./cmd/vox
+	@CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 \
+	CC="$(OSXCROSS_CC_ARM64)" \
+	$(GO_BUILD) -o $(DIST_DIR)/vox-darwin-arm64 ./cmd/vox
 
 # Help
 help:
