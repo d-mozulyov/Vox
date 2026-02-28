@@ -60,7 +60,7 @@ linux-arm64: $(DIST_DIR)
 	@echo "Building for Linux arm64..."
 	@CGO_ENABLED=1 GOOS=linux GOARCH=arm64 \
 	CC=aarch64-linux-musl-gcc \
-	PKG_CONFIG_LIBDIR=$(AARCH64_SYSROOT)/usr/lib/pkgconfig \
+	PKG_CONFIG_LIBDIR=$(AARCH64_SYSROOT)/usr/lib/pkgconfig:$(AARCH64_SYSROOT)/usr/share/pkgconfig \
 	PKG_CONFIG_SYSROOT_DIR=$(AARCH64_SYSROOT) \
 	CGO_CFLAGS="-I$(AARCH64_SYSROOT)/usr/include" \
 	CGO_LDFLAGS="-L$(AARCH64_SYSROOT)/usr/lib" \

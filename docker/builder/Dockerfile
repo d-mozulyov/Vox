@@ -32,8 +32,9 @@ ENV PATH="/opt/aarch64-linux-musl-cross/bin:${PATH}"
 RUN mkdir -p /opt/aarch64-sysroot/etc/apk && \
     cp /etc/apk/repositories /opt/aarch64-sysroot/etc/apk/ && \
     cp -r /etc/apk/keys /opt/aarch64-sysroot/etc/apk/ && \
-    apk --arch aarch64 --root /opt/aarch64-sysroot --initdb --no-cache \
-    add alsa-lib-dev libx11-dev gtk+3.0-dev libayatana-appindicator-dev
+    apk --arch aarch64 --root /opt/aarch64-sysroot \
+    --allow-untrusted --initdb --no-cache \
+    add alsa-lib-dev libx11-dev gtk+3.0-dev libayatana-appindicator-dev zlib-dev
 
 # Install Go 1.25.5 manually
 RUN wget https://go.dev/dl/go1.25.5.linux-amd64.tar.gz && \
