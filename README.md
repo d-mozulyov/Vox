@@ -50,26 +50,43 @@ Download the latest release for your platform from the [Releases](https://github
 - Go 1.21 or later
 - Git
 
-### Build
+### Quick Build
 
 ```bash
 git clone https://github.com/d-mozulyov/vox.git
 cd vox
+
+# Using Makefile (Linux/macOS/WSL)
+make
+
+# Using PowerShell script (Windows/Cross-platform)
+.\build.ps1
+
+# Using Go directly
 go build -o vox ./cmd/vox
 ```
 
-### Cross-Compilation
+### Cross-Platform Builds
+
+Vox supports building for all platforms (Windows, Linux, macOS) on x64 and arm64 architectures:
 
 ```bash
-# Windows x64
-GOOS=windows GOARCH=amd64 go build -o vox-windows-amd64.exe ./cmd/vox
+# Build for all platforms using Makefile
+make build-all
 
-# Linux x64 (with musl for compatibility)
-GOOS=linux GOARCH=amd64 go build -o vox-linux-amd64 ./cmd/vox
+# Build for all platforms using PowerShell
+.\build.ps1 -Platform all
 
-# macOS arm64
-GOOS=darwin GOARCH=arm64 go build -o vox-darwin-arm64 ./cmd/vox
+# Build for specific platform
+make linux-amd64
+.\build.ps1 -Platform linux -Arch amd64
 ```
+
+For detailed build instructions, including musl support for Linux and CI/CD setup, see [BUILD.md](BUILD.md).
+
+### Docker Build Environment
+
+The project uses Docker for optimized CI/CD builds. Contributors and forks can use the official Docker image or build their own. See [docs/DOCKER_BUILD.md](docs/DOCKER_BUILD.md) for details.
 
 ## Contributing
 

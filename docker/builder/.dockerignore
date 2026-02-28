@@ -1,0 +1,5 @@
+# Ignore everything except what's needed for the build context
+*
+
+# We don't actually need any files from the repo for building the image
+# The Dockerfile only downloads external dependencies
