@@ -1,65 +1,65 @@
-# Локальное тестирование Docker-образа
+# Local Docker Image Testing
 
-Эта инструкция описывает, как тестировать Docker-образ для сборки перед его публикацией на GitHub Container Registry.
+This guide describes how to test the Docker builder image locally before publishing it to GitHub Container Registry.
 
-## Предварительные требования
+## Prerequisites
 
-- Docker установлен в WSL2 (если работаешь в Windows)
-- Проект доступен в WSL (например, `/mnt/c/Projects/Vox` или `~/vox`)
+- Docker installed in WSL2 (if working on Windows)
+- Project accessible in WSL (e.g., `/mnt/c/Projects/Vox` or `~/vox`)
 
-## Установка Docker в WSL2 (если еще не установлен)
+## Installing Docker in WSL2 (if not already installed)
 
 ```bash
-# Установка Docker
+# Install Docker
 curl -fsSL https://get.docker.com -o get-docker.sh
 sudo sh get-docker.sh
 
-# Добавление пользователя в группу docker
+# Add user to docker group
 sudo usermod -aG docker $USER
 
-# Перезапуск WSL или выход/вход для применения изменений
+# Restart WSL or logout/login to apply changes
 ```
 
-## Шаг 1: Сборка Docker-образа
+## Step 1: Build the Docker Image
 
 ```bash
-# Перейди в директорию проекта
-cd /mnt/c/Projects/Vox  # или твой путь
+# Navigate to project directory
+cd /mnt/c/Projects/Vox  # or your path
 
-# Собери Docker-образ
+# Build the Docker image
 docker build -t vox-builder-test:local -f docker/builder/Dockerfile .
 ```
 
-Это создаст локальный образ с тегом `vox-builder-test:local`.
+This creates a local image tagged as `vox-builder-test:local`.
 
-## Шаг 2: Проверка образа
+## Step 2: Verify the Image
 
 ```bash
-# Запусти контейнер в интерактивном режиме
+# Run container in interactive mode
 docker run --rm -it vox-builder-test:local bash
 
-# Внутри контейнера проверь установленные инструменты
-go version          # Должна быть версия Go 1.23
-make --version      # Должен быть установлен Make
-git --version       # Должен быть установлен Git
+# Inside the container, verify installed tools
+go version          # Should show Go 1.23
+make --version      # Should show Make
+git --version       # Should show Git
 
-# Выйди из контейнера
+# Exit the container
 exit
 ```
 
-## Шаг 3: Тестирование сборки проекта
+## Step 3: Test Project Build
 
-### Полная сборка всех платформ
+### Full Build for All Platforms
 
 ```bash
-# Запусти сборку всех платформ
+# Run build for all platforms
 docker run --rm -v $(pwd):/workspace vox-builder-test:local make all
 
-# Проверь результаты
+# Check results
 ls -lh dist/
 ```
 
-Должны появиться 6 бинарников:
+Should produce 6 binaries:
 - `vox-windows-amd64.exe`
 - `vox-windows-arm64.exe`
 - `vox-linux-amd64`
@@ -67,130 +67,130 @@ ls -lh dist/
 - `vox-darwin-amd64`
 - `vox-darwin-arm64`
 
-### Сборка конкретной платформы
+### Build for Specific Platform
 
 ```bash
-# Очисти предыдущие артефакты
+# Clean previous artifacts
 docker run --rm -v $(pwd):/workspace vox-builder-test:local make clean
 
-# Собери только для Linux amd64
+# Build only for Linux amd64
 docker run --rm -v $(pwd):/workspace vox-builder-test:local make linux-amd64
 
-# Проверь бинарник
+# Check the binary
 file dist/vox-linux-amd64
 ```
 
-## Шаг 4: Тестирование запуска тестов
+## Step 4: Test Running Tests
 
 ```bash
-# Запусти тесты с виртуальным дисплеем
+# Run tests with virtual display
 docker run --rm -v $(pwd):/workspace vox-builder-test:local \
   bash -c "Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 & export DISPLAY=:99.0 && sleep 1 && go test ./..."
 ```
 
-Или через Makefile:
+Or via Makefile:
 
 ```bash
 docker run --rm -v $(pwd):/workspace vox-builder-test:local make test
 ```
 
-## Шаг 5: Интерактивная отладка
+## Step 5: Interactive Debugging
 
-Если что-то пошло не так, запусти контейнер в интерактивном режиме:
+If something goes wrong, run the container in interactive mode:
 
 ```bash
-# Запусти bash в контейнере с примонтированным проектом
+# Start bash in container with mounted project
 docker run --rm -it -v $(pwd):/workspace vox-builder-test:local bash
 
-# Внутри контейнера можешь выполнять команды вручную
+# Inside the container, run commands manually
 cd /workspace
 go mod download
 make linux-amd64
 go test ./...
 
-# Выйди когда закончишь
+# Exit when done
 exit
 ```
 
-## Шаг 6: Публикация образа (после успешного тестирования)
+## Step 6: Publish the Image (after successful testing)
 
-Если все тесты прошли успешно, можешь опубликовать образ:
+If all tests pass successfully, you can publish the image:
 
 ```bash
-# Перетегируй образ для публикации
+# Retag the image for publishing
 docker tag vox-builder-test:local ghcr.io/d-mozulyov/vox-builder:latest
 
-# Войди в GitHub Container Registry
+# Login to GitHub Container Registry
 echo YOUR_PAT | docker login ghcr.io -u d-mozulyov --password-stdin
 
-# Опубликуй образ
+# Push the image
 docker push ghcr.io/d-mozulyov/vox-builder:latest
 ```
 
-## Полезные команды
+## Useful Commands
 
-### Очистка Docker
+### Docker Cleanup
 
 ```bash
-# Удалить тестовый образ
+# Remove test image
 docker rmi vox-builder-test:local
 
-# Удалить все неиспользуемые образы
+# Remove all unused images
 docker image prune -a
 
-# Посмотреть все образы
+# List all images
 docker images
 ```
 
-### Проверка размера образа
+### Check Image Size
 
 ```bash
-# Посмотреть размер образа
+# View image size
 docker images vox-builder-test:local
 ```
 
-Ожидаемый размер: ~400-500MB
+Expected size: ~400-500MB
 
-### Быстрая проверка всего процесса
+### Quick Full Verification
 
 ```bash
-# Одна команда для полной проверки
+# One command for complete verification
 docker build -t vox-builder-test:local -f docker/builder/Dockerfile . && \
 docker run --rm -v $(pwd):/workspace vox-builder-test:local make all && \
 ls -lh dist/
 ```
 
-## Типичные проблемы
+## Common Issues
 
-### Docker не найден в WSL
+### Docker not found in WSL
 
 ```bash
-# Проверь, запущен ли Docker daemon
+# Check if Docker daemon is running
 sudo service docker start
 
-# Или установи Docker Desktop для Windows с интеграцией WSL2
+# Or install Docker Desktop for Windows with WSL2 integration
 ```
 
-### Ошибка "permission denied" при монтировании
+### "permission denied" error when mounting
 
 ```bash
-# Убедись, что ты в директории проекта
+# Ensure you're in the project directory
 pwd
 
-# Используй полный путь
+# Use full path
 docker run --rm -v /mnt/c/Projects/Vox:/workspace vox-builder-test:local make all
 ```
 
-### Сборка не находит go.mod
+### Build can't find go.mod
 
 ```bash
-# Убедись, что монтируешь корень проекта, где находится go.mod
-ls go.mod  # Должен существовать
+# Ensure you're mounting the project root where go.mod is located
+ls go.mod  # Should exist
 
-# Проверь, что рабочая директория в контейнере правильная
+# Verify working directory in container is correct
 docker run --rm -v $(pwd):/workspace vox-builder-test:local ls -la /workspace
 ```
 
-## Заключение
+## Conclusion
 
-После успешного прохождения всех тестов можешь быть уверен, что образ работает корректно и готов к публикации. Это гарантирует, что CI/CD на GitHub Actions также будет работать без проблем.
+After successfully passing all tests, you can be confident that the image works correctly and is ready for publishing. This ensures that CI/CD on GitHub Actions will also work without issues.
