@@ -1,6 +1,6 @@
 # Vox Builder Image
-# Minimal Docker image for building pure Go binaries (CGO_ENABLED=0)
-# Based on Alpine Linux for small size and fast builds
+# Docker image for cross-compiling Vox for all target platforms
+# Based on Alpine Linux with musl for portable Linux binaries
 
 FROM alpine:3.19
 
@@ -34,7 +34,8 @@ RUN mkdir -p /opt/aarch64-sysroot/etc/apk && \
     cp -r /etc/apk/keys /opt/aarch64-sysroot/etc/apk/ && \
     apk --arch aarch64 --root /opt/aarch64-sysroot \
     --allow-untrusted --initdb --no-cache \
-    add alsa-lib-dev libx11-dev gtk+3.0-dev libayatana-appindicator-dev zlib-dev
+    add alsa-lib-dev libx11-dev gtk+3.0-dev libayatana-appindicator-dev zlib-dev && \
+    rm -f /opt/aarch64-sysroot/usr/include/stdc-predef.h
 
 # Install Go 1.25.5 manually
 RUN wget https://go.dev/dl/go1.25.5.linux-amd64.tar.gz && \

@@ -63,7 +63,7 @@ linux-arm64: $(DIST_DIR)
 	PKG_CONFIG_LIBDIR=$(AARCH64_SYSROOT)/usr/lib/pkgconfig:$(AARCH64_SYSROOT)/usr/share/pkgconfig \
 	PKG_CONFIG_SYSROOT_DIR=$(AARCH64_SYSROOT) \
 	CGO_CFLAGS="-I$(AARCH64_SYSROOT)/usr/include" \
-	CGO_LDFLAGS="-L$(AARCH64_SYSROOT)/usr/lib" \
+	CGO_LDFLAGS="-L$(AARCH64_SYSROOT)/usr/lib -L$(AARCH64_SYSROOT)/lib -Wl,--allow-shlib-undefined" \
 	$(GO_BUILD) -o $(DIST_DIR)/vox-linux-arm64 ./cmd/vox
 
 # macOS amd64
