@@ -26,7 +26,7 @@ Unlike traditional transcription tools, Vox uses the `/v1/chat/completions` endp
 
 ### Installation
 
-Download the latest release for your platform from the [Releases](https://github.com/YOUR_USERNAME/vox/releases) page.
+Download the latest release for your platform from the [Releases](https://github.com/d-mozulyov/vox/releases) page.
 
 ### Configuration
 
@@ -53,7 +53,7 @@ Download the latest release for your platform from the [Releases](https://github
 ### Build
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/vox.git
+git clone https://github.com/d-mozulyov/vox.git
 cd vox
 go build -o vox ./cmd/vox
 ```

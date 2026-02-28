@@ -1,3 +1,3 @@
-module github.com/YOUR_USERNAME/vox
+module github.com/d-mozulyov/vox
 
 go 1.25.5
