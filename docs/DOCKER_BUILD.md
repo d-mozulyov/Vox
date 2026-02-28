@@ -44,21 +44,7 @@ RUN apt-get update && apt-get install -y \
 
 #### Step 2: Build and Publish Your Image
 
-**Option A: Using GitHub Actions (Recommended)**
-
-1. Fork the repository
-2. Push your changes to your fork
-3. Go to: `https://github.com/YOUR_USERNAME/Vox/actions`
-4. Select "Build Docker Image"
-5. Click "Run workflow"
-6. Select branch and run
-
-GitHub Actions will automatically:
-- Build the image
-- Publish to `ghcr.io/YOUR_USERNAME/vox-builder:latest`
-- Make it available for your workflows
-
-**Option B: Build Locally**
+**Build Locally:**
 
 ```bash
 # Build the image
@@ -110,18 +96,45 @@ image: ${{ vars.BUILDER_IMAGE || 'ghcr.io/YOUR_USERNAME/vox-builder:latest' }}
 
 ## Updating the Docker Image
 
-When you need to update dependencies:
+When you need to update dependencies (rare - once every few months):
 
-### For the Main Repository
+### Manual Build and Publish
 
-1. Edit `docker/builder/Dockerfile`
-2. Commit and push changes
-3. The "Build Docker Image" workflow will automatically rebuild on Dockerfile changes
-4. Or run it manually: Actions → Build Docker Image → Run workflow
+1. Edit `docker/builder/Dockerfile` to update dependencies
+2. Build the image locally:
+   ```bash
+   docker build -t ghcr.io/d-mozulyov/vox-builder:latest -f docker/builder/Dockerfile .
+   ```
+3. Test the image (optional but recommended):
+   ```bash
+   docker run --rm -it ghcr.io/d-mozulyov/vox-builder:latest bash
+   go version
+   musl-gcc --version
+   ```
+4. Login to GitHub Container Registry:
+   ```bash
+   echo YOUR_PAT | docker login ghcr.io -u d-mozulyov --password-stdin
+   ```
+5. Push the image:
+   ```bash
+   docker push ghcr.io/d-mozulyov/vox-builder:latest
+   ```
+6. Commit and push the Dockerfile changes:
+   ```bash
+   git add docker/builder/Dockerfile
+   git commit -m "chore: update Docker build dependencies"
+   git push origin main
+   ```
+
+**Why manual?** 
+- Simple and explicit control
+- No complex automation for rare operations
+- Dockerfile changes happen once every few months
+- Follows KISS principle
 
 ### For Forks
 
-Same process as above, but the image will be published to your namespace.
+Same process, but replace `d-mozulyov` with your GitHub username.
 
 ## Local Development with Docker
 
@@ -145,7 +158,8 @@ docker run --rm -it -v $(pwd):/workspace ghcr.io/d-mozulyov/vox-builder:latest b
 - `docker/builder/Dockerfile` - Docker image definition
 - `docker/builder/README.md` - Detailed Docker image documentation
 - `.github/workflows/build.yml` - Main CI/CD workflow (uses the image)
-- `.github/workflows/docker-build.yml` - Workflow to build and publish the image
+
+To update the image, see the "Updating the Docker Image" section above.
 
 ## Troubleshooting
 
@@ -185,3 +199,7 @@ To reduce size:
 - [GitHub Container Registry Documentation](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry)
 - [Docker Multi-platform Builds](https://docs.docker.com/build/building/multi-platform/)
 - [GitHub Actions with Containers](https://docs.github.com/en/actions/using-jobs/running-jobs-in-a-container)
+
+---
+
+**Note:** The Docker image is updated manually when dependencies change (rare). This keeps the process simple and explicit, following the KISS principle.

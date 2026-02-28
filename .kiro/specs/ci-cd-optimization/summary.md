@@ -26,10 +26,11 @@
 - Поддержка переопределения образа через переменную `BUILDER_IMAGE`
 - Подробные комментарии для контрибьюторов
 
-**Создано `.github/workflows/docker-build.yml`:**
-- Автоматическая сборка образа при изменении Dockerfile
-- Возможность запуска вручную через GitHub UI
-- Публикация в GitHub Container Registry
+**Решено НЕ создавать автоматический workflow для Docker образа:**
+- Вместо этого используется ручная сборка через Docker CLI
+- Проще, явнее, следует принципу KISS
+- Нет риска race condition
+- Dockerfile меняется редко (раз в несколько месяцев)
 
 ### 3. Документация
 
@@ -55,8 +56,7 @@
 ### 4. Комментарии в workflow файлах
 
 Добавлены подробные комментарии в:
-- `.github/workflows/build.yml` - как использовать и переопределить образ
-- `.github/workflows/docker-build.yml` - когда и как обновлять образ
+- `.github/workflows/build.yml` - как использовать и переопределить образ, процесс ручного обновления
 
 ## Результаты
 
@@ -113,8 +113,7 @@
 
 ```
 .github/workflows/
-  ├── build.yml              # Основной CI/CD (использует образ)
-  └── docker-build.yml       # Сборка и публикация образа
+  └── build.yml              # Основной CI/CD (использует образ)
 
 docker/builder/
   ├── Dockerfile             # Определение образа
@@ -139,9 +138,18 @@ docs/
 Когда нужно обновить Go, библиотеки или инструменты:
 
 1. Изменить `docker/builder/Dockerfile`
-2. Закоммитить и запушить
-3. Workflow автоматически пересоберёт образ
-4. Или запустить вручную: Actions → Build Docker Image → Run workflow
+2. Собрать образ локально:
+   ```bash
+   docker build -t ghcr.io/d-mozulyov/vox-builder:latest -f docker/builder/Dockerfile .
+   ```
+3. Опубликовать образ:
+   ```bash
+   echo YOUR_PAT | docker login ghcr.io -u d-mozulyov --password-stdin
+   docker push ghcr.io/d-mozulyov/vox-builder:latest
+   ```
+4. Закоммитить изменения Dockerfile
+
+Подробнее см. [docs/DOCKER_BUILD.md](../../../docs/DOCKER_BUILD.md)
 
 ### Локальная разработка
 
@@ -189,4 +197,4 @@ docker run --rm -v $(pwd):/workspace ghcr.io/d-mozulyov/vox-builder:latest \
 - Образ: https://github.com/d-mozulyov/vox-builder/pkgs/container/vox-builder
 - Документация: [docs/DOCKER_BUILD.md](../../../docs/DOCKER_BUILD.md)
 - Workflow: [.github/workflows/build.yml](../../../.github/workflows/build.yml)
-- Docker build: [.github/workflows/docker-build.yml](../../../.github/workflows/docker-build.yml)
+- Dockerfile: [docker/builder/Dockerfile](../../../docker/builder/Dockerfile)

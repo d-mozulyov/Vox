@@ -111,13 +111,9 @@ docker push ghcr.io/d-mozulyov/vox-builder:latest
 
 ## Troubleshooting
 
-### Workflow "Build Docker Image" не появляется
+## Troubleshooting
 
-- Убедись, что файл `.github/workflows/docker-build.yml` закоммичен
-- Подожди 1-2 минуты после push
-- Обнови страницу Actions
-
-### Ошибка "denied" при публикации образа
+### GitHub Actions can't pull the image
 
 - Проверь, что workflow имеет права `packages: write` (уже настроено)
 - Проверь, что ты владелец репозитория
