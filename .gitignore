@@ -27,6 +27,29 @@ go.work.sum
 # env file
 .env
 
-# Editor/IDE
-# .idea/
-# .vscode/
+# Editor/IDE - keep .vscode/ and .kiro/ in repo
+.idea/
+# .vscode/ - KEEP IN REPO
+# .kiro/ - KEEP IN REPO
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Build artifacts
+/dist/
+/build/
+/bin/
+*.log
+
+# Local configuration
+config.local.*
+*.local
+
+# Secrets
+*.key
+*.pem
+secrets/
