@@ -5,9 +5,12 @@ import (
 	"os"
 )
 
+// Version is set during build via -ldflags
+var Version = "0.0.0"
+
 func main() {
 	fmt.Println("Vox - Voice Input Assistant")
-	fmt.Println("Version: 0.1.0")
+	fmt.Printf("Version: %s\n", Version)
 
 	// TODO: Initialize application
 	// - System tray icon
@@ -18,7 +21,7 @@ func main() {
 	if len(os.Args) > 1 {
 		switch os.Args[1] {
 		case "version":
-			fmt.Println("0.1.0")
+			fmt.Println(Version)
 		case "help":
 			printHelp()
 		default:
