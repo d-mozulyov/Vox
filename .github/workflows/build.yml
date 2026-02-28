@@ -1,5 +1,9 @@
 name: Build and Release
 
+# IMPORTANT: Before using this workflow, replace REPLACE_WITH_USERNAME
+# with your GitHub username in the container image URLs below.
+# Example: ghcr.io/yourusername/vox-builder:latest
+
 on:
   push:
     branches: [ main, develop ]
@@ -15,29 +19,22 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/REPLACE_WITH_USERNAME/vox-builder:latest
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Go
-      uses: actions/setup-go@v5
+    - name: Cache Go modules
+      uses: actions/cache@v4
       with:
-        go-version: '1.21'
-
-    - name: Install Linux dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          libasound2-dev \
-          libx11-dev \
-          libxcursor-dev \
-          libxrandr-dev \
-          libxinerama-dev \
-          libxi-dev \
-          libgl1-mesa-dev \
-          libayatana-appindicator3-dev \
-          xvfb
+        path: |
+          ~/.cache/go-build
+          /go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
 
     - name: Run tests
       run: |
@@ -51,37 +48,23 @@ jobs:
     name: Build
     needs: test
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/REPLACE_WITH_USERNAME/vox-builder:latest
     if: startsWith(github.ref, 'refs/tags/v')
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Go
-      uses: actions/setup-go@v5
+    - name: Cache Go modules
+      uses: actions/cache@v4
       with:
-        go-version: '1.21'
-
-    - name: Install musl tools
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          musl-tools \
-          musl-dev \
-          libasound2-dev \
-          libx11-dev \
-          libxcursor-dev \
-          libxrandr-dev \
-          libxinerama-dev \
-          libxi-dev \
-          libgl1-mesa-dev \
-          libayatana-appindicator3-dev
-
-        # Install musl cross-compiler for arm64
-        wget https://musl.cc/aarch64-linux-musl-cross.tgz
-        tar -xzf aarch64-linux-musl-cross.tgz
-        sudo mv aarch64-linux-musl-cross /opt/
-        echo "/opt/aarch64-linux-musl-cross/bin" >> $GITHUB_PATH
+        path: |
+          ~/.cache/go-build
+          /go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
 
     - name: Build for all platforms
       run: |

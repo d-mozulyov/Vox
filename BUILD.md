@@ -123,7 +123,34 @@ You can check the version of a built binary:
 
 ## CI/CD with GitHub Actions
 
-The project uses GitHub Actions for automated builds and releases.
+The project uses GitHub Actions for automated builds and releases with optimized Docker-based builds.
+
+### Docker Builder Image
+
+To speed up CI/CD, we use a pre-built Docker image (`vox-builder`) that contains all build dependencies:
+
+- Go 1.21.6
+- musl-tools and cross-compilers
+- All required Linux libraries
+- Xvfb for headless testing
+
+**Benefits:**
+- Faster builds (no dependency installation on each run)
+- Consistent build environment
+- Reproducible builds
+
+**Image location:** `ghcr.io/<username>/vox-builder:latest`
+
+See `docker/builder/README.md` for details on building and publishing the image.
+
+### Build Caching
+
+GitHub Actions uses Go module and build caching to speed up repeated builds:
+
+- Go modules cache: `~/go/pkg/mod`
+- Build cache: `~/.cache/go-build`
+
+This significantly reduces build times for subsequent runs.
 
 ### Workflow Triggers
 
@@ -167,7 +194,27 @@ Linux binaries in GitHub releases are built with musl libc for maximum compatibi
 - No dependency on system libraries
 - Smaller binary size with `-s -w` linker flags
 
-**Note:** This is handled automatically by GitHub Actions. Local Linux builds use standard dynamic linking for simplicity.
+**Note:** This is handled automatically by GitHub Actions using the Docker builder image. Local Linux builds use standard dynamic linking for simplicity.
+
+## Using Docker for Local Builds (Optional)
+
+You can use the same Docker image locally for consistent builds:
+
+```bash
+# Build for current platform
+docker run --rm -v $(pwd):/workspace ghcr.io/<username>/vox-builder:latest \
+  go build -o vox ./cmd/vox
+
+# Run tests
+docker run --rm -v $(pwd):/workspace ghcr.io/<username>/vox-builder:latest \
+  bash -c "Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 & export DISPLAY=:99.0 && sleep 1 && go test ./..."
+
+# Build all platforms (like CI does)
+docker run --rm -v $(pwd):/workspace ghcr.io/<username>/vox-builder:latest \
+  bash -c "make build-all"
+```
+
+This ensures your local builds match CI builds exactly.
 
 ## Troubleshooting
 
