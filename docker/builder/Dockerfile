@@ -19,7 +19,14 @@ RUN apk add --no-cache \
     libxi-dev \
     mesa-dev \
     gtk+3.0-dev \
-    libayatana-appindicator-dev
+    libayatana-appindicator-dev \
+    # Static libraries that are available in Alpine
+    glib-static \
+    cairo-static \
+    harfbuzz-static \
+    zlib-static \
+    libx11-static \
+    dbus-glib-dev
 
 # Install Go 1.21.6
 RUN wget https://go.dev/dl/go1.21.6.linux-amd64.tar.gz && \
