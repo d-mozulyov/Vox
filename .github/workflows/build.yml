@@ -49,7 +49,7 @@ jobs:
           fi
 
           echo "Building for ${GOOS}/${GOARCH}..."
-          GOOS=$GOOS GOARCH=$GOARCH go build -ldflags "-s -w -X main.Version=${VERSION}" -o "dist/${output_name}" ./cmd/vox
+          GOOS=$GOOS GOARCH=$GOARCH go build -ldflags "-s -w -X github.com/d-mozulyov/vox/cmd/vox.Version=${VERSION}" -o "dist/${output_name}" ./cmd/vox
         done
       shell: bash
 
