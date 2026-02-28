@@ -32,17 +32,6 @@
             "problemMatcher": [
                 "$go"
             ]
-        },
-        {
-            "label": "build-all-platforms",
-            "type": "shell",
-            "command": "bash",
-            "args": [
-                "${workspaceFolder}/scripts/build-all.sh"
-            ],
-            "problemMatcher": [
-                "$go"
-            ]
         }
     ]
 }
