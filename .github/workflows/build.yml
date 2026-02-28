@@ -36,10 +36,16 @@ jobs:
           libxinerama-dev \
           libxi-dev \
           libgl1-mesa-dev \
-          libayatana-appindicator3-dev
+          libayatana-appindicator3-dev \
+          xvfb
 
     - name: Run tests
-      run: go test ./...
+      run: |
+        # Start virtual frame buffer for headless X11
+        Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+        export DISPLAY=:99.0
+        sleep 1
+        go test ./...
 
   build:
     name: Build

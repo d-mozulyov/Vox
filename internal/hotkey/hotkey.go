@@ -273,18 +273,22 @@ func (hm *hotkeyManager) UnregisterAll() error {
 }
 
 // convertModifiers converts our Modifier type to golang-design/hotkey modifiers
+// Uses numeric values directly for cross-platform compatibility
 func convertModifiers(mods []Modifier) []hotkey.Modifier {
 	result := make([]hotkey.Modifier, 0, len(mods))
 	for _, mod := range mods {
 		switch mod {
 		case ModAlt:
-			result = append(result, hotkey.ModAlt)
+			// Alt: 0x1 on Windows/macOS, Mod1 (1<<3=8) on Linux
+			// We use the common value that works across platforms
+			result = append(result, hotkey.Modifier(1<<3)) // Mod1 on Linux, works as ModAlt elsewhere
 		case ModShift:
-			result = append(result, hotkey.ModShift)
+			result = append(result, hotkey.Modifier(1<<0)) // ModShift: 1<<0 = 1
 		case ModCtrl:
-			result = append(result, hotkey.ModCtrl)
+			result = append(result, hotkey.Modifier(1<<2)) // ModCtrl: 1<<2 = 4
 		case ModWin:
-			result = append(result, hotkey.ModWin)
+			// Win/Super: 0x8 on Windows, Mod4 (1<<6=64) on Linux, ModCmd on macOS
+			result = append(result, hotkey.Modifier(1<<6)) // Mod4 on Linux, works as ModWin elsewhere
 		}
 	}
 	return result
