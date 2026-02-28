@@ -6,23 +6,24 @@ This Docker image contains all dependencies needed to build Vox for all supporte
 
 ## Contents
 
-- Alpine Linux 3.19 (musl-based)
-- Go 1.21.6
-- musl gcc for native Linux builds
-- aarch64-linux-musl-cross for ARM64 Linux cross-compilation
-- All required development libraries (ALSA, X11, AppIndicator, GTK, etc.)
-- Xvfb for headless testing
+- Alpine Linux 3.19
+- Go 1.23
+- Make
+- Git
+- Xvfb (for headless testing)
 
 ## Build Strategy
 
-Linux binaries are built with musl using dynamic linking. Alpine Linux is used as the base image because it's natively built on musl.
+All binaries are built as **static binaries** with `CGO_ENABLED=0`. This means:
+- No C dependencies required
+- No musl or glibc needed
+- Binaries work on any Linux distribution
+- Simple cross-compilation for all platforms
 
-The project depends on CGO libraries:
-- `github.com/hajimehoshi/oto` requires ALSA
-- `golang.design/x/hotkey` requires X11
-- `github.com/getlantern/systray` requires GTK/AppIndicator
-
-Static linking with all these libraries is complex in Alpine due to missing static packages. Dynamic linking provides working binaries that depend on system libraries (musl-based).
+The project uses pure Go libraries without CGO:
+- `github.com/ebitengine/oto/v3` for audio (pure Go)
+- `golang.design/x/hotkey` for hotkeys
+- `github.com/getlantern/systray` for system tray
 
 ## Building the Image
 
@@ -48,8 +49,7 @@ docker run --rm -it ghcr.io/d-mozulyov/vox-builder:latest bash
 
 # Inside the container, verify tools
 go version
-gcc --version
-aarch64-linux-musl-gcc --version
+make --version
 ```
 
 ## Publishing the Image
@@ -84,11 +84,14 @@ You can use this image for local development to ensure consistency with CI:
 ```bash
 # Run build in container
 docker run --rm -v $(pwd):/workspace ghcr.io/d-mozulyov/vox-builder:latest \
-  go build -o vox ./cmd/vox
+  make all
 
 # Run tests in container
 docker run --rm -v $(pwd):/workspace ghcr.io/d-mozulyov/vox-builder:latest \
   bash -c "Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 & export DISPLAY=:99.0 && sleep 1 && go test ./..."
+
+# Interactive shell
+docker run --rm -it -v $(pwd):/workspace ghcr.io/d-mozulyov/vox-builder:latest bash
 ```
 
 ## For Forks and Contributors
@@ -106,28 +109,26 @@ The main repository uses: `ghcr.io/d-mozulyov/vox-builder:latest`
 
 ## Updating the Image
 
-When dependencies change:
+When dependencies change (rare - Go version updates):
 
 1. Update the Dockerfile
-2. Rebuild the image with a new tag (e.g., `v1.1`)
-3. Push both the versioned tag and `latest`
-4. Update GitHub Actions workflows if needed
+2. Rebuild the image
+3. Push to GitHub Container Registry
+4. Commit Dockerfile changes
 
 ```bash
-docker build -t ghcr.io/d-mozulyov/vox-builder:v1.1 -f docker/builder/Dockerfile .
-docker tag ghcr.io/d-mozulyov/vox-builder:v1.1 ghcr.io/d-mozulyov/vox-builder:latest
-docker push ghcr.io/d-mozulyov/vox-builder:v1.1
+docker build -t ghcr.io/d-mozulyov/vox-builder:latest -f docker/builder/Dockerfile .
 docker push ghcr.io/d-mozulyov/vox-builder:latest
+git add docker/builder/Dockerfile
+git commit -m "chore: update Docker builder image"
+git push origin main
 ```
-
-Or use the automated workflow:
-- Go to: https://github.com/d-mozulyov/Vox/actions
-- Select "Build Docker Image"
-- Click "Run workflow"
 
 ## Image Size
 
-Expected size: ~1.5-2GB (compressed: ~600-800MB)
+Expected size: ~400-500MB (compressed: ~150-200MB)
+
+Much smaller than the previous musl-based image because we don't need C compilers and development libraries.
 
 ## Troubleshooting
 
@@ -145,8 +146,10 @@ sudo usermod -aG docker $USER
 - Ensure your PAT has `write:packages` scope
 - Verify you're logged in: `docker login ghcr.io`
 
-### Image too large
+## Benefits of Pure Go Builds
 
-- Consider using multi-stage builds
-- Remove unnecessary files in the same RUN command
-- Use `--squash` flag when building (experimental)
+✓ **Simplicity**: No C dependencies, no cross-compilers needed  
+✓ **Speed**: Faster builds without CGO overhead  
+✓ **Portability**: Static binaries work everywhere  
+✓ **Reliability**: No runtime library dependencies  
+✓ **Small image**: Minimal Docker image size  

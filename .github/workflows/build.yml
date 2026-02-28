@@ -81,39 +81,12 @@ jobs:
 
         # Extract version from tag (remove 'v' prefix)
         VERSION="${GITHUB_REF_NAME#v}"
-        BUILD_TIME=$(date -u '+%Y-%m-%d_%H:%M:%S')
-        LDFLAGS="-s -w -X main.Version=${VERSION} -X main.BuildTime=${BUILD_TIME}"
-
-        # Create output directory
-        mkdir -p dist
 
         echo "Building Vox version ${VERSION}"
         echo "================================"
 
-        # Build Windows binaries
-        echo "Building for Windows amd64..."
-        GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -ldflags "${LDFLAGS}" -o "dist/vox-windows-amd64.exe" ./cmd/vox
-
-        echo "Building for Windows arm64..."
-        GOOS=windows GOARCH=arm64 CGO_ENABLED=0 go build -ldflags "${LDFLAGS}" -o "dist/vox-windows-arm64.exe" ./cmd/vox
-
-        # Build Linux binaries with musl (dynamic linking)
-        echo "Building for Linux amd64..."
-        GOOS=linux GOARCH=amd64 CGO_ENABLED=1 CC=gcc go build -ldflags "${LDFLAGS}" -o "dist/vox-linux-amd64" ./cmd/vox
-
-        echo "Building for Linux arm64..."
-        GOOS=linux GOARCH=arm64 CGO_ENABLED=1 CC=aarch64-linux-musl-gcc go build -ldflags "${LDFLAGS}" -o "dist/vox-linux-arm64" ./cmd/vox
-
-        # Build macOS binaries
-        echo "Building for macOS amd64..."
-        GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -ldflags "${LDFLAGS}" -o "dist/vox-darwin-amd64" ./cmd/vox
-
-        echo "Building for macOS arm64..."
-        GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -ldflags "${LDFLAGS}" -o "dist/vox-darwin-arm64" ./cmd/vox
-
-        echo "================================"
-        echo "Build complete!"
-        ls -lh dist/
+        # Build all platforms using Makefile
+        make VERSION=${VERSION} all
       shell: bash
 
     - name: Upload artifacts

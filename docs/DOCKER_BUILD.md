@@ -5,13 +5,25 @@ This document explains how the project uses Docker for CI/CD optimization and ho
 ## Overview
 
 The project uses a pre-built Docker image (`ghcr.io/d-mozulyov/vox-builder:latest`) that contains all build dependencies:
-- Go 1.21.6
-- musl-tools and musl-dev for static Linux builds
-- aarch64-linux-musl-cross for ARM64 cross-compilation
-- All required development libraries (ALSA, X11, AppIndicator, etc.)
-- Xvfb for headless testing
+- Go 1.23
+- Make
+- Git
+- Xvfb (for headless testing)
 
-This approach speeds up CI/CD by 3-4x (from ~10-15 minutes to ~3-5 minutes).
+This approach speeds up CI/CD by avoiding dependency installation on each run.
+
+## Build Strategy
+
+All binaries are built as **static binaries** with `CGO_ENABLED=0`:
+- No C dependencies
+- No musl or glibc needed
+- Works on any Linux distribution
+- Simple cross-compilation
+
+The project uses pure Go libraries:
+- `github.com/ebitengine/oto/v3` - audio (pure Go, no ALSA/CGO)
+- `golang.design/x/hotkey` - hotkeys
+- `github.com/getlantern/systray` - system tray
 
 ## Using the Official Image
 
@@ -37,9 +49,8 @@ Edit `docker/builder/Dockerfile` to add your dependencies:
 
 ```dockerfile
 # Example: Add additional tools
-RUN apt-get update && apt-get install -y \
-    your-custom-package \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache \
+    your-custom-package
 ```
 
 #### Step 2: Build and Publish Your Image
@@ -96,7 +107,7 @@ image: ${{ vars.BUILDER_IMAGE || 'ghcr.io/YOUR_USERNAME/vox-builder:latest' }}
 
 ## Updating the Docker Image
 
-When you need to update dependencies (rare - once every few months):
+When you need to update dependencies (rare - Go version updates):
 
 ### Manual Build and Publish
 
@@ -105,12 +116,7 @@ When you need to update dependencies (rare - once every few months):
    ```bash
    docker build -t ghcr.io/d-mozulyov/vox-builder:latest -f docker/builder/Dockerfile .
    ```
-3. Test the image (optional but recommended):
-   ```bash
-   docker run --rm -it ghcr.io/d-mozulyov/vox-builder:latest bash
-   go version
-   musl-gcc --version
-   ```
+3. Test the image (see next section)
 4. Login to GitHub Container Registry:
    ```bash
    echo YOUR_PAT | docker login ghcr.io -u d-mozulyov --password-stdin
@@ -122,19 +128,90 @@ When you need to update dependencies (rare - once every few months):
 6. Commit and push the Dockerfile changes:
    ```bash
    git add docker/builder/Dockerfile
-   git commit -m "chore: update Docker build dependencies"
+   git commit -m "chore: update Docker builder image"
    git push origin main
    ```
 
 **Why manual?** 
 - Simple and explicit control
 - No complex automation for rare operations
-- Dockerfile changes happen once every few months
+- Dockerfile changes happen rarely (Go version updates)
 - Follows KISS principle
 
 ### For Forks
 
 Same process, but replace `d-mozulyov` with your GitHub username.
+
+## Testing the Docker Image Locally
+
+Before publishing the image, test it locally to ensure the build works:
+
+### Step 1: Build the Docker Image
+
+```bash
+# From the repository root
+docker build -t ghcr.io/d-mozulyov/vox-builder:latest -f docker/builder/Dockerfile .
+```
+
+### Step 2: Test Interactive Shell
+
+```bash
+# Start an interactive shell in the container
+docker run --rm -it -v $(pwd):/workspace ghcr.io/d-mozulyov/vox-builder:latest bash
+
+# Inside the container, verify tools
+go version
+make --version
+git --version
+
+# Exit the container
+exit
+```
+
+### Step 3: Test Building the Project
+
+```bash
+# Run the full build
+docker run --rm -v $(pwd):/workspace ghcr.io/d-mozulyov/vox-builder:latest make all
+
+# Check the output
+ls -lh dist/
+```
+
+### Step 4: Test Running Tests
+
+```bash
+# Run tests with virtual display
+docker run --rm -v $(pwd):/workspace ghcr.io/d-mozulyov/vox-builder:latest \
+  bash -c "Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 & export DISPLAY=:99.0 && sleep 1 && go test ./..."
+```
+
+### Step 5: Test Specific Platform Build
+
+```bash
+# Test building for a specific platform
+docker run --rm -v $(pwd):/workspace ghcr.io/d-mozulyov/vox-builder:latest make linux-amd64
+
+# Verify the binary
+file dist/vox-linux-amd64
+```
+
+### On Windows with WSL
+
+If you're on Windows and using WSL:
+
+```bash
+# Navigate to your project directory in WSL
+cd /mnt/c/path/to/your/project
+
+# Or if your project is in WSL filesystem
+cd ~/vox
+
+# Run the same Docker commands as above
+docker run --rm -v $(pwd):/workspace ghcr.io/d-mozulyov/vox-builder:latest make all
+```
+
+**Note**: Docker in WSL2 can access both Windows filesystem (`/mnt/c/...`) and WSL filesystem (`~/...`).
 
 ## Local Development with Docker
 
@@ -142,14 +219,18 @@ You can use the Docker image locally to ensure consistency with CI:
 
 ```bash
 # Build the project
-docker run --rm -v $(pwd):/workspace ghcr.io/d-mozulyov/vox-builder:latest \
-  go build -o vox ./cmd/vox
+docker run --rm -v $(pwd):/workspace ghcr.io/d-mozulyov/vox-builder:latest make all
+
+# Build specific platform
+docker run --rm -v $(pwd):/workspace ghcr.io/d-mozulyov/vox-builder:latest make windows-amd64
 
 # Run tests
-docker run --rm -v $(pwd):/workspace ghcr.io/d-mozulyov/vox-builder:latest \
-  bash -c "Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 & export DISPLAY=:99.0 && sleep 1 && go test ./..."
+docker run --rm -v $(pwd):/workspace ghcr.io/d-mozulyov/vox-builder:latest make test
 
-# Interactive shell
+# Clean build artifacts
+docker run --rm -v $(pwd):/workspace ghcr.io/d-mozulyov/vox-builder:latest make clean
+
+# Interactive shell for debugging
 docker run --rm -it -v $(pwd):/workspace ghcr.io/d-mozulyov/vox-builder:latest bash
 ```
 
@@ -158,8 +239,7 @@ docker run --rm -it -v $(pwd):/workspace ghcr.io/d-mozulyov/vox-builder:latest b
 - `docker/builder/Dockerfile` - Docker image definition
 - `docker/builder/README.md` - Detailed Docker image documentation
 - `.github/workflows/build.yml` - Main CI/CD workflow (uses the image)
-
-To update the image, see the "Updating the Docker Image" section above.
+- `Makefile` - Build targets for all platforms
 
 ## Troubleshooting
 
@@ -175,24 +255,31 @@ To update the image, see the "Updating the Docker Image" section above.
 - Verify you're logged in: `docker login ghcr.io`
 - Ensure the image name matches: `ghcr.io/USERNAME/vox-builder`
 
-### Image is too large
+### Docker not found in WSL
 
-Current size: ~1.5-2GB (compressed: ~600-800MB)
+```bash
+# Install Docker in WSL2
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo usermod -aG docker $USER
 
-This is normal for a full build environment. GitHub Actions caches the image, so download time is minimal (~10-20 seconds).
+# Restart WSL or logout/login
+```
 
-To reduce size:
-- Use multi-stage builds
-- Remove unnecessary packages
-- Combine RUN commands to reduce layers
+### Build fails in Docker but works locally
+
+- Check Go version matches between local and Docker
+- Verify all dependencies are in go.mod
+- Run `go mod tidy` before building
 
 ## Benefits of This Approach
 
-✓ **Speed**: 3-4x faster CI/CD (no dependency installation on each run)  
+✓ **Speed**: Fast CI/CD (no dependency installation on each run)  
 ✓ **Consistency**: Same environment everywhere (CI, local, contributors)  
-✓ **Reliability**: No risk of apt-get failures or version mismatches  
-✓ **Caching**: Go modules and build cache further speed up builds  
-✓ **Flexibility**: Easy to customize for forks  
+✓ **Reliability**: No risk of package manager failures  
+✓ **Simplicity**: Pure Go builds, no C dependencies  
+✓ **Portability**: Static binaries work everywhere  
+✓ **Small image**: ~400-500MB (compressed: ~150-200MB)  
 
 ## Additional Resources
 

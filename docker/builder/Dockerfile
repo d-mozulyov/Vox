@@ -1,54 +1,23 @@
-FROM alpine:3.19
+# Vox Builder Image
+# Minimal Docker image for building pure Go binaries (CGO_ENABLED=0)
+# Based on Alpine Linux for small size and fast builds
 
-# Install base tools and dependencies
+FROM golang:1.23-alpine3.19
+
+# Install minimal dependencies
 RUN apk add --no-cache \
     bash \
-    wget \
-    curl \
     git \
-    build-base \
-    pkgconfig \
+    make \
     ca-certificates \
-    xvfb \
-    # Development libraries for musl-based builds
-    alsa-lib-dev \
-    libx11-dev \
-    libxcursor-dev \
-    libxrandr-dev \
-    libxinerama-dev \
-    libxi-dev \
-    mesa-dev \
-    gtk+3.0-dev \
-    libayatana-appindicator-dev \
-    # Static libraries that are available in Alpine
-    glib-static \
-    cairo-static \
-    harfbuzz-static \
-    zlib-static \
-    libx11-static \
-    dbus-glib-dev
-
-# Install Go 1.21.6
-RUN wget https://go.dev/dl/go1.21.6.linux-amd64.tar.gz && \
-    tar -C /usr/local -xzf go1.21.6.linux-amd64.tar.gz && \
-    rm go1.21.6.linux-amd64.tar.gz
-
-ENV PATH="/usr/local/go/bin:${PATH}"
-ENV GOPATH="/go"
-ENV PATH="${GOPATH}/bin:${PATH}"
-
-# Install cross-compiler for arm64 (musl-based)
-RUN wget https://musl.cc/aarch64-linux-musl-cross.tgz && \
-    tar -xzf aarch64-linux-musl-cross.tgz && \
-    mv aarch64-linux-musl-cross /opt/ && \
-    rm aarch64-linux-musl-cross.tgz
-
-ENV PATH="/opt/aarch64-linux-musl-cross/bin:${PATH}"
+    xvfb
 
 # Set working directory
 WORKDIR /workspace
 
 # Verify installations
 RUN go version && \
-    gcc --version && \
-    aarch64-linux-musl-gcc --version
+    make --version
+
+# Default command
+CMD ["/bin/bash"]
