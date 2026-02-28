@@ -1,5 +1,15 @@
 name: Build and Release
 
+# This workflow uses a pre-built Docker image for faster builds.
+# Official image: ghcr.io/d-mozulyov/vox-builder:latest
+#
+# For forks: You can use the official image or build your own.
+# To use your own image, set the BUILDER_IMAGE repository variable:
+# Settings → Secrets and variables → Actions → Variables → New variable
+# Name: BUILDER_IMAGE, Value: ghcr.io/YOUR_USERNAME/vox-builder:latest
+#
+# See docs/DOCKER_BUILD.md for detailed instructions.
+
 on:
   push:
     branches: [ main, develop ]

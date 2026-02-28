@@ -84,6 +84,10 @@ make linux-amd64
 
 For detailed build instructions, including musl support for Linux and CI/CD setup, see [BUILD.md](BUILD.md).
 
+### Docker Build Environment
+
+The project uses Docker for optimized CI/CD builds. Contributors and forks can use the official Docker image or build their own. See [docs/DOCKER_BUILD.md](docs/DOCKER_BUILD.md) for details.
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.

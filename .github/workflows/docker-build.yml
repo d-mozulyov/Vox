@@ -1,7 +1,18 @@
 name: Build Docker Image
 
-# This workflow builds and publishes the vox-builder Docker image
-# Run manually when dependencies need to be updated
+# This workflow builds and publishes the Docker image used for CI/CD.
+#
+# The image contains all build dependencies (Go, musl-tools, cross-compilers, etc.)
+# and is used by the main build workflow to speed up builds by 3-4x.
+#
+# Triggers:
+# - Automatically when docker/builder/Dockerfile changes
+# - Manually via GitHub Actions UI (Actions → Build Docker Image → Run workflow)
+#
+# Published to: ghcr.io/OWNER/vox-builder:latest
+#
+# For forks: This will automatically publish to your namespace.
+# See docs/DOCKER_BUILD.md for more information.
 
 on:
   workflow_dispatch:

@@ -127,21 +127,23 @@ The project uses GitHub Actions for automated builds and releases with optimized
 
 ### Docker Builder Image
 
-To speed up CI/CD, we use a pre-built Docker image (`vox-builder`) that contains all build dependencies:
+To speed up CI/CD, we use a pre-built Docker image that contains all build dependencies:
 
 - Go 1.21.6
 - musl-tools and cross-compilers
 - All required Linux libraries
 - Xvfb for headless testing
 
+**Official image:** `ghcr.io/d-mozulyov/vox-builder:latest`
+
 **Benefits:**
-- Faster builds (no dependency installation on each run)
-- Consistent build environment
+- 3-4x faster builds (no dependency installation on each run)
+- Consistent build environment across CI and local development
 - Reproducible builds
 
-**Image location:** `ghcr.io/<username>/vox-builder:latest`
+**For contributors:** The official image is public and works out of the box.
 
-See `docker/builder/README.md` for details on building and publishing the image.
+**For forks:** You can use the official image or build your own. See [docs/DOCKER_BUILD.md](docs/DOCKER_BUILD.md) for detailed instructions.
 
 ### Build Caching
 
@@ -150,7 +152,7 @@ GitHub Actions uses Go module and build caching to speed up repeated builds:
 - Go modules cache: `~/go/pkg/mod`
 - Build cache: `~/.cache/go-build`
 
-This significantly reduces build times for subsequent runs.
+Combined with the Docker image, this provides significant speedup for subsequent runs.
 
 ### Workflow Triggers
 
@@ -202,19 +204,20 @@ You can use the same Docker image locally for consistent builds:
 
 ```bash
 # Build for current platform
-docker run --rm -v $(pwd):/workspace ghcr.io/<username>/vox-builder:latest \
+docker run --rm -v $(pwd):/workspace ghcr.io/d-mozulyov/vox-builder:latest \
   go build -o vox ./cmd/vox
 
 # Run tests
-docker run --rm -v $(pwd):/workspace ghcr.io/<username>/vox-builder:latest \
+docker run --rm -v $(pwd):/workspace ghcr.io/d-mozulyov/vox-builder:latest \
   bash -c "Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 & export DISPLAY=:99.0 && sleep 1 && go test ./..."
 
-# Build all platforms (like CI does)
-docker run --rm -v $(pwd):/workspace ghcr.io/<username>/vox-builder:latest \
-  bash -c "make build-all"
+# Interactive shell for development
+docker run --rm -it -v $(pwd):/workspace ghcr.io/d-mozulyov/vox-builder:latest bash
 ```
 
 This ensures your local builds match CI builds exactly.
+
+**For forks:** See [docs/DOCKER_BUILD.md](docs/DOCKER_BUILD.md) for instructions on using your own Docker image.
 
 ## Troubleshooting
 
