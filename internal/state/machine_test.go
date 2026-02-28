@@ -40,7 +40,9 @@ func TestSubscribe(t *testing.T) {
 		}
 	})
 
-	sm.Transition(StateRecording)
+	if err := sm.Transition(StateRecording); err != nil {
+		t.Fatalf("Failed to transition to Recording: %v", err)
+	}
 
 	if !called {
 		t.Error("Callback was not called")
