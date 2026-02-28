@@ -9,11 +9,8 @@ LDFLAGS := -s -w -X main.Version=$(VERSION) -X main.BuildTime=$(BUILD_TIME)
 # Output directory
 DIST_DIR := dist
 
-# CGO settings - disabled for pure Go builds
-export CGO_ENABLED := 0
-
 # Go build command
-GO_BUILD := go build -ldflags "$(LDFLAGS)"
+GO_BUILD := go build -buildvcs=false -ldflags "$(LDFLAGS)"
 
 # Targets
 .PHONY: all clean test windows-amd64 windows-arm64 linux-amd64 linux-arm64 darwin-amd64 darwin-arm64
@@ -43,32 +40,32 @@ $(DIST_DIR):
 # Windows amd64
 windows-amd64: $(DIST_DIR)
 	@echo "Building for Windows amd64..."
-	@GOOS=windows GOARCH=amd64 $(GO_BUILD) -o $(DIST_DIR)/vox-windows-amd64.exe ./cmd/vox
+	@CGO_ENABLED=0 GOOS=windows GOARCH=amd64 $(GO_BUILD) -o $(DIST_DIR)/vox-windows-amd64.exe ./cmd/vox
 
 # Windows arm64
 windows-arm64: $(DIST_DIR)
 	@echo "Building for Windows arm64..."
-	@GOOS=windows GOARCH=arm64 $(GO_BUILD) -o $(DIST_DIR)/vox-windows-arm64.exe ./cmd/vox
+	@CGO_ENABLED=0 GOOS=windows GOARCH=arm64 $(GO_BUILD) -o $(DIST_DIR)/vox-windows-arm64.exe ./cmd/vox
 
 # Linux amd64
 linux-amd64: $(DIST_DIR)
 	@echo "Building for Linux amd64..."
-	@GOOS=linux GOARCH=amd64 $(GO_BUILD) -o $(DIST_DIR)/vox-linux-amd64 ./cmd/vox
+	@CGO_ENABLED=1 GOOS=linux GOARCH=amd64 $(GO_BUILD) -o $(DIST_DIR)/vox-linux-amd64 ./cmd/vox
 
 # Linux arm64
 linux-arm64: $(DIST_DIR)
 	@echo "Building for Linux arm64..."
-	@GOOS=linux GOARCH=arm64 $(GO_BUILD) -o $(DIST_DIR)/vox-linux-arm64 ./cmd/vox
+	@CGO_ENABLED=1 GOOS=linux GOARCH=arm64 CC=aarch64-linux-musl-gcc $(GO_BUILD) -o $(DIST_DIR)/vox-linux-arm64 ./cmd/vox
 
 # macOS amd64
 darwin-amd64: $(DIST_DIR)
 	@echo "Building for macOS amd64..."
-	@GOOS=darwin GOARCH=amd64 $(GO_BUILD) -o $(DIST_DIR)/vox-darwin-amd64 ./cmd/vox
+	@CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 $(GO_BUILD) -o $(DIST_DIR)/vox-darwin-amd64 ./cmd/vox
 
 # macOS arm64
 darwin-arm64: $(DIST_DIR)
 	@echo "Building for macOS arm64..."
-	@GOOS=darwin GOARCH=arm64 $(GO_BUILD) -o $(DIST_DIR)/vox-darwin-arm64 ./cmd/vox
+	@CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 $(GO_BUILD) -o $(DIST_DIR)/vox-darwin-arm64 ./cmd/vox
 
 # Help
 help:
