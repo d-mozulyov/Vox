@@ -2,6 +2,8 @@
 
 This Docker image contains all dependencies needed to build Vox for all supported platforms.
 
+**IMPORTANT**: This image is built and published MANUALLY. There is no automated workflow for building this image. When the Dockerfile is updated, follow the instructions below to rebuild and publish.
+
 ## Contents
 
 - Ubuntu 22.04 base

@@ -19,9 +19,18 @@ RUN apt-get update && apt-get install -y \
     libxi-dev \
     libgl1-mesa-dev \
     libayatana-appindicator3-dev \
+    libgtk-3-dev \
     xvfb \
     ca-certificates \
+    pkg-config \
     && rm -rf /var/lib/apt/lists/*
+
+# Create symlinks for musl to find system headers
+RUN ln -s /usr/include/x86_64-linux-gnu/asm /usr/include/x86_64-linux-musl/asm && \
+    ln -s /usr/include/asm-generic /usr/include/x86_64-linux-musl/asm-generic && \
+    ln -s /usr/include/linux /usr/include/x86_64-linux-musl/linux && \
+    mkdir -p /usr/include/x86_64-linux-musl/sys && \
+    ln -s /usr/include/x86_64-linux-gnu/sys/* /usr/include/x86_64-linux-musl/sys/ || true
 
 # Install Go 1.21.6
 RUN wget https://go.dev/dl/go1.21.6.linux-amd64.tar.gz && \
