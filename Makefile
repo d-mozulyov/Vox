@@ -52,10 +52,19 @@ linux-amd64: $(DIST_DIR)
 	@echo "Building for Linux amd64..."
 	@CGO_ENABLED=1 GOOS=linux GOARCH=amd64 $(GO_BUILD) -o $(DIST_DIR)/vox-linux-amd64 ./cmd/vox
 
+# ARM64 cross-compilation sysroot (populated in Docker builder image)
+AARCH64_SYSROOT := /opt/aarch64-sysroot
+
 # Linux arm64
 linux-arm64: $(DIST_DIR)
 	@echo "Building for Linux arm64..."
-	@CGO_ENABLED=1 GOOS=linux GOARCH=arm64 CC=aarch64-linux-musl-gcc $(GO_BUILD) -o $(DIST_DIR)/vox-linux-arm64 ./cmd/vox
+	@CGO_ENABLED=1 GOOS=linux GOARCH=arm64 \
+	CC=aarch64-linux-musl-gcc \
+	PKG_CONFIG_LIBDIR=$(AARCH64_SYSROOT)/usr/lib/pkgconfig \
+	PKG_CONFIG_SYSROOT_DIR=$(AARCH64_SYSROOT) \
+	CGO_CFLAGS="-I$(AARCH64_SYSROOT)/usr/include" \
+	CGO_LDFLAGS="-L$(AARCH64_SYSROOT)/usr/lib" \
+	$(GO_BUILD) -o $(DIST_DIR)/vox-linux-arm64 ./cmd/vox
 
 # macOS amd64
 darwin-amd64: $(DIST_DIR)
