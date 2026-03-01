@@ -32,17 +32,30 @@ RUN wget https://ziglang.org/download/${ZIG_VERSION}/zig-x86_64-linux-${ZIG_VERS
     ln -s /opt/zig-x86_64-linux-${ZIG_VERSION}/zig /usr/local/bin/zig && \
     rm zig-x86_64-linux-${ZIG_VERSION}.tar.xz
 
-# Create zig-cc wrapper scripts for CGo cross-compilation
+# Create zig-cc wrapper scripts for non-macOS targets
 # Go's CC env var works best with a single executable path
 RUN for target in \
     x86_64-linux-musl \
     aarch64-linux-musl \
-    x86_64-macos \
-    aarch64-macos \
     x86_64-windows-gnu \
     aarch64-windows-gnu; \
     do \
     printf '#!/bin/sh\nexec zig cc -target %s "$@"\n' "$target" > /usr/local/bin/zig-cc-${target} && \
+    chmod +x /usr/local/bin/zig-cc-${target}; \
+    done
+
+# Download macOS SDK for framework headers (Cocoa, AppKit, etc.)
+# Only extracting the SDK — no osxcross build needed
+ARG MACOSX_SDK_VERSION=14.5
+RUN wget -q https://github.com/joseluisq/macosx-sdks/releases/download/${MACOSX_SDK_VERSION}/MacOSX${MACOSX_SDK_VERSION}.sdk.tar.xz && \
+    tar -xJf MacOSX${MACOSX_SDK_VERSION}.sdk.tar.xz -C /opt && \
+    rm MacOSX${MACOSX_SDK_VERSION}.sdk.tar.xz
+
+# Create zig-cc wrapper scripts for macOS targets (with SDK sysroot)
+RUN for target in x86_64-macos aarch64-macos; do \
+    printf '#!/bin/sh\nexec zig cc -target %s -isysroot /opt/MacOSX%s.sdk "$@"\n' \
+    "$target" "${MACOSX_SDK_VERSION}" \
+    > /usr/local/bin/zig-cc-${target} && \
     chmod +x /usr/local/bin/zig-cc-${target}; \
     done
 
