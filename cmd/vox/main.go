@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/d-mozulyov/vox/internal/hotkey"
 	"github.com/d-mozulyov/vox/internal/indicator"
@@ -138,41 +137,25 @@ func run() error {
 			Key:       hotkey.KeyV,
 		}
 
-		// Hotkey callback - toggles state
+		// Hotkey callback - toggles between Idle and Recording states
 		hotkeyCallback := func() {
 			logger.Info("Hotkey pressed: %s", hk.String())
 
 			currentState := stateMachine.GetState()
 			var nextState state.State
 
+			// Toggle between Idle and Recording
 			switch currentState {
 			case state.StateIdle:
 				nextState = state.StateRecording
 			case state.StateRecording:
-				nextState = state.StateProcessing
-			case state.StateProcessing:
-				// Processing state transitions to Idle automatically
-				// Hotkey press during processing is ignored
-				logger.Info("Hotkey pressed during processing, ignoring")
-				return
+				nextState = state.StateIdle
 			}
 
 			if err := stateMachine.Transition(nextState); err != nil {
 				logger.Error("Error transitioning state: %v", err)
 			} else {
 				logger.Info("State transitioned: %s -> %s", currentState, nextState)
-
-				// If we just transitioned to Processing, schedule automatic transition to Idle
-				if nextState == state.StateProcessing {
-					go func() {
-						time.Sleep(1 * time.Second)
-						if err := stateMachine.Transition(state.StateIdle); err != nil {
-							logger.Error("Error auto-transitioning from Processing to Idle: %v", err)
-						} else {
-							logger.Info("Auto-transitioned: Processing -> Idle")
-						}
-					}()
-				}
 			}
 		}
 

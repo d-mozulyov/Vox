@@ -68,9 +68,8 @@ func (vi *visualIndicator) loadIcons(iconsPath string) error {
 
 	// Use 32x32 as the default size for system tray icons
 	iconFiles := map[state.State]string{
-		state.StateIdle:       "idle_32" + iconExt,
-		state.StateRecording:  "recording_32" + iconExt,
-		state.StateProcessing: "processing_32" + iconExt,
+		state.StateIdle:      "idle_32" + iconExt,
+		state.StateRecording: "recording_32" + iconExt,
 	}
 
 	logger.Info("Loading icons from: %s", iconsPath)
