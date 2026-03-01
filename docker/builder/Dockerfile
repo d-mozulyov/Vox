@@ -26,11 +26,11 @@ RUN apk add --no-cache \
     musl-fts-dev
 
 # Install Zig — universal C/C++ cross-compiler for all 6 targets
-ARG ZIG_VERSION=0.15.1
-RUN wget https://ziglang.org/download/${ZIG_VERSION}/zig-linux-x86_64-${ZIG_VERSION}.tar.xz && \
-    tar -xJf zig-linux-x86_64-${ZIG_VERSION}.tar.xz -C /opt && \
-    ln -s /opt/zig-linux-x86_64-${ZIG_VERSION}/zig /usr/local/bin/zig && \
-    rm zig-linux-x86_64-${ZIG_VERSION}.tar.xz
+ARG ZIG_VERSION=0.15.2
+RUN wget https://ziglang.org/download/${ZIG_VERSION}/zig-x86_64-linux-${ZIG_VERSION}.tar.xz && \
+    tar -xJf zig-x86_64-linux-${ZIG_VERSION}.tar.xz -C /opt && \
+    ln -s /opt/zig-x86_64-linux-${ZIG_VERSION}/zig /usr/local/bin/zig && \
+    rm zig-x86_64-linux-${ZIG_VERSION}.tar.xz
 
 # Create zig-cc wrapper scripts for CGo cross-compilation
 # Go's CC env var works best with a single executable path
