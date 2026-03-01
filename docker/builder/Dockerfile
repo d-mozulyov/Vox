@@ -55,8 +55,8 @@ RUN wget -q https://github.com/joseluisq/macosx-sdks/releases/download/${MACOSX_
 # -w suppresses all warnings from macOS SDK headers (deprecated APIs, nullability, availability)
 RUN SDK=/opt/MacOSX${MACOSX_SDK_VERSION}.sdk && \
     for target in x86_64-macos aarch64-macos; do \
-    printf '#!/bin/sh\nexec zig cc -target %s --sysroot=%s -F%s/System/Library/Frameworks -I%s/usr/include -L%s/usr/lib -w "$@"\n' \
-    "$target" "$SDK" "$SDK" "$SDK" "$SDK" \
+    printf '#!/bin/sh\nexec zig cc -target %s --sysroot=%s -F%s/System/Library/Frameworks -I%s/usr/include -L/usr/lib -w "$@"\n' \
+    "$target" "$SDK" "$SDK" "$SDK" \
     > /usr/local/bin/zig-cc-${target} && \
     chmod +x /usr/local/bin/zig-cc-${target}; \
     done
