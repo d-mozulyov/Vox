@@ -167,9 +167,20 @@ func (hm *hotkeyManager) Register(hk Hotkey, callback func()) error {
 	nativeHotkey := hotkey.New(mods, k)
 
 	// Try to register the hotkey
-	if err := nativeHotkey.Register(); err != nil {
-		logger.Error("Failed to register hotkey %s: %v", key, err)
-		return fmt.Errorf("failed to register hotkey %s: %w", key, err)
+	err := nativeHotkey.Register()
+	if err != nil {
+		// If hotkey is already registered, try to unregister and register again
+		logger.Warn("Hotkey %s appears to be already registered, attempting to unregister first", key)
+
+		// Try to unregister (this might fail if it's registered by another process)
+		_ = nativeHotkey.Unregister()
+
+		// Try to register again
+		err = nativeHotkey.Register()
+		if err != nil {
+			logger.Error("Failed to register hotkey %s: %v", key, err)
+			return fmt.Errorf("failed to register hotkey %s: %w", key, err)
+		}
 	}
 
 	// Create stop channel for the listener goroutine
