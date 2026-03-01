@@ -11,20 +11,17 @@ func TestStateMachine(t *testing.T) {
 		t.Errorf("Expected initial state Idle, got %s", sm.GetState())
 	}
 
-	// Test valid transitions: Idle -> Recording -> Processing -> Idle
+	// Test valid transitions: Idle -> Recording -> Idle
 	if err := sm.Transition(StateRecording); err != nil {
 		t.Errorf("Idle->Recording failed: %v", err)
 	}
-	if err := sm.Transition(StateProcessing); err != nil {
-		t.Errorf("Recording->Processing failed: %v", err)
-	}
 	if err := sm.Transition(StateIdle); err != nil {
-		t.Errorf("Processing->Idle failed: %v", err)
+		t.Errorf("Recording->Idle failed: %v", err)
 	}
 
-	// Test invalid transition
-	if err := sm.Transition(StateProcessing); err == nil {
-		t.Error("Expected error for invalid Idle->Processing transition")
+	// Test invalid transition: Idle -> Idle
+	if err := sm.Transition(StateIdle); err == nil {
+		t.Error("Expected error for invalid Idle->Idle transition")
 	}
 }
 
