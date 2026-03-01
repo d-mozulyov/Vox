@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/d-mozulyov/vox/internal/platform"
 	"github.com/d-mozulyov/vox/internal/state"
@@ -55,17 +56,21 @@ func NewVisualIndicator(iconSetter IconSetter, iconsPath string) (VisualIndicato
 }
 
 // loadIcons loads icon files from the specified directory
-// Icons are loaded in multiple sizes (16x16, 32x32, 64x64) for different DPI settings
-// The system will automatically select the appropriate size based on display settings
+// On Windows, ICO format is required. On other platforms, PNG is used.
 func (vi *visualIndicator) loadIcons(iconsPath string) error {
 	logger := platform.GetLogger()
 
+	// Determine icon extension based on platform
+	iconExt := ".png"
+	if runtime.GOOS == "windows" {
+		iconExt = ".ico"
+	}
+
 	// Use 32x32 as the default size for system tray icons
-	// This is a good balance for most displays and DPI settings
 	iconFiles := map[state.State]string{
-		state.StateIdle:       "idle_32.png",
-		state.StateRecording:  "recording_32.png",
-		state.StateProcessing: "processing_32.png",
+		state.StateIdle:       "idle_32" + iconExt,
+		state.StateRecording:  "recording_32" + iconExt,
+		state.StateProcessing: "processing_32" + iconExt,
 	}
 
 	logger.Info("Loading icons from: %s", iconsPath)
