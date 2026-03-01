@@ -1,10 +1,11 @@
 # Vox Builder Image
 # Docker image for cross-compiling Vox for all 6 target platforms
 # Based on Alpine Linux with musl for portable Linux binaries
+# Uses Zig as a universal C cross-compiler (replaces osxcross + musl-cross)
 
 FROM alpine:3.19
 
-# Install x86_64 build dependencies
+# Install build dependencies (host platform)
 RUN apk add --no-cache \
     bash \
     git \
@@ -21,25 +22,32 @@ RUN apk add --no-cache \
     libx11-dev \
     gtk+3.0-dev \
     libayatana-appindicator-dev \
-    clang \
-    llvm-dev \
-    cmake \
-    python3 \
-    libxml2-dev \
-    openssl-dev \
-    patch \
-    bsd-compat-headers \
     linux-headers \
     musl-fts-dev
 
-# Install ARM64 cross-compiler (musl)
-RUN wget https://musl.cc/aarch64-linux-musl-cross.tgz && \
-    tar -xzf aarch64-linux-musl-cross.tgz -C /opt && \
-    rm aarch64-linux-musl-cross.tgz
+# Install Zig — universal C/C++ cross-compiler for all 6 targets
+ARG ZIG_VERSION=0.15.1
+RUN wget https://ziglang.org/download/${ZIG_VERSION}/zig-linux-x86_64-${ZIG_VERSION}.tar.xz && \
+    tar -xJf zig-linux-x86_64-${ZIG_VERSION}.tar.xz -C /opt && \
+    ln -s /opt/zig-linux-x86_64-${ZIG_VERSION}/zig /usr/local/bin/zig && \
+    rm zig-linux-x86_64-${ZIG_VERSION}.tar.xz
 
-ENV PATH="/opt/aarch64-linux-musl-cross/bin:${PATH}"
+# Create zig-cc wrapper scripts for CGo cross-compilation
+# Go's CC env var works best with a single executable path
+RUN for target in \
+    x86_64-linux-musl \
+    aarch64-linux-musl \
+    x86_64-macos \
+    aarch64-macos \
+    x86_64-windows-gnu \
+    aarch64-windows-gnu; \
+    do \
+    printf '#!/bin/sh\nexec zig cc -target %s "$@"\n' "$target" > /usr/local/bin/zig-cc-${target} && \
+    chmod +x /usr/local/bin/zig-cc-${target}; \
+    done
 
-# Create ARM64 sysroot with dev libraries for cross-compilation
+# Create ARM64 sysroot with dev libraries for Linux ARM64 cross-compilation
+# Zig provides musl libc, but platform-specific libs (GTK, ALSA) need a sysroot
 RUN mkdir -p /opt/aarch64-sysroot/etc/apk && \
     cp /etc/apk/repositories /opt/aarch64-sysroot/etc/apk/ && \
     cp -r /etc/apk/keys /opt/aarch64-sysroot/etc/apk/ && \
@@ -48,36 +56,23 @@ RUN mkdir -p /opt/aarch64-sysroot/etc/apk && \
     add alsa-lib-dev libx11-dev gtk+3.0-dev libayatana-appindicator-dev zlib-dev && \
     rm -f /opt/aarch64-sysroot/usr/include/stdc-predef.h
 
-# Build osxcross for macOS cross-compilation
-ARG MACOSX_SDK_VERSION=14.5
-RUN git clone --depth 1 https://github.com/tpoechtrager/osxcross.git /tmp/osxcross && \
-    wget -q -O /tmp/osxcross/tarballs/MacOSX${MACOSX_SDK_VERSION}.sdk.tar.xz \
-    https://github.com/joseluisq/macosx-sdks/releases/download/${MACOSX_SDK_VERSION}/MacOSX${MACOSX_SDK_VERSION}.sdk.tar.xz && \
-    cd /tmp/osxcross && \
-    UNATTENDED=1 TARGET_DIR=/opt/osxcross ./build.sh && \
-    rm -rf /tmp/osxcross
+# Install Go
+ARG GO_VERSION=1.25.5
+RUN wget https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz && \
+    tar -C /usr/local -xzf go${GO_VERSION}.linux-amd64.tar.gz && \
+    rm go${GO_VERSION}.linux-amd64.tar.gz
 
-ENV PATH="/opt/osxcross/bin:${PATH}"
-
-# Install Go 1.25.5 manually
-RUN wget https://go.dev/dl/go1.25.5.linux-amd64.tar.gz && \
-    tar -C /usr/local -xzf go1.25.5.linux-amd64.tar.gz && \
-    rm go1.25.5.linux-amd64.tar.gz
-
-# Set Go environment variables
 ENV PATH="/usr/local/go/bin:${PATH}"
 ENV GOPATH="/go"
 ENV PATH="${GOPATH}/bin:${PATH}"
 
-# Set working directory
 WORKDIR /workspace
 
 # Verify installations
 RUN go version && \
+    zig version && \
     make --version && \
     gcc --version && \
-    aarch64-linux-musl-gcc --version && \
-    ls /opt/osxcross/bin/*-clang* || echo "osxcross clang not found"
+    echo "=== Zig CC wrappers ===" && ls /usr/local/bin/zig-cc-*
 
-# Default command
 CMD ["/bin/bash"]

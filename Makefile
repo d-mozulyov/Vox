@@ -15,10 +15,6 @@ GO_BUILD := go build -buildvcs=false -ldflags "$(LDFLAGS)"
 # ARM64 cross-compilation sysroot (populated in Docker builder image)
 AARCH64_SYSROOT := /opt/aarch64-sysroot
 
-# Detect osxcross compiler (handles varying darwin version suffix)
-OSXCROSS_CC_AMD64 := $(shell ls /opt/osxcross/bin/x86_64-apple-darwin*-clang 2>/dev/null | head -1)
-OSXCROSS_CC_ARM64 := $(shell ls /opt/osxcross/bin/aarch64-apple-darwin*-clang 2>/dev/null | head -1)
-
 # Targets
 .PHONY: all clean test windows-amd64 windows-arm64 linux-amd64 linux-arm64 darwin-amd64 darwin-arm64
 
@@ -47,12 +43,16 @@ $(DIST_DIR):
 # Windows amd64
 windows-amd64: $(DIST_DIR)
 	@echo "Building for Windows amd64..."
-	@CGO_ENABLED=0 GOOS=windows GOARCH=amd64 $(GO_BUILD) -o $(DIST_DIR)/vox-windows-amd64.exe ./cmd/vox
+	@CGO_ENABLED=1 GOOS=windows GOARCH=amd64 \
+	CC=zig-cc-x86_64-windows-gnu \
+	$(GO_BUILD) -o $(DIST_DIR)/vox-windows-amd64.exe ./cmd/vox
 
 # Windows arm64
 windows-arm64: $(DIST_DIR)
 	@echo "Building for Windows arm64..."
-	@CGO_ENABLED=0 GOOS=windows GOARCH=arm64 $(GO_BUILD) -o $(DIST_DIR)/vox-windows-arm64.exe ./cmd/vox
+	@CGO_ENABLED=1 GOOS=windows GOARCH=arm64 \
+	CC=zig-cc-aarch64-windows-gnu \
+	$(GO_BUILD) -o $(DIST_DIR)/vox-windows-arm64.exe ./cmd/vox
 
 # Linux amd64
 linux-amd64: $(DIST_DIR)
@@ -63,25 +63,25 @@ linux-amd64: $(DIST_DIR)
 linux-arm64: $(DIST_DIR)
 	@echo "Building for Linux arm64..."
 	@CGO_ENABLED=1 GOOS=linux GOARCH=arm64 \
-	CC=aarch64-linux-musl-gcc \
+	CC=zig-cc-aarch64-linux-musl \
 	PKG_CONFIG_LIBDIR=$(AARCH64_SYSROOT)/usr/lib/pkgconfig:$(AARCH64_SYSROOT)/usr/share/pkgconfig \
 	PKG_CONFIG_SYSROOT_DIR=$(AARCH64_SYSROOT) \
 	CGO_CFLAGS="-I$(AARCH64_SYSROOT)/usr/include" \
-	CGO_LDFLAGS="-L$(AARCH64_SYSROOT)/usr/lib -L$(AARCH64_SYSROOT)/lib -Wl,--allow-shlib-undefined" \
+	CGO_LDFLAGS="-L$(AARCH64_SYSROOT)/usr/lib -L$(AARCH64_SYSROOT)/lib" \
 	$(GO_BUILD) -o $(DIST_DIR)/vox-linux-arm64 ./cmd/vox
 
 # macOS amd64
 darwin-amd64: $(DIST_DIR)
 	@echo "Building for macOS amd64..."
 	@CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 \
-	CC="$(OSXCROSS_CC_AMD64)" \
+	CC=zig-cc-x86_64-macos \
 	$(GO_BUILD) -o $(DIST_DIR)/vox-darwin-amd64 ./cmd/vox
 
 # macOS arm64
 darwin-arm64: $(DIST_DIR)
 	@echo "Building for macOS arm64..."
 	@CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 \
-	CC="$(OSXCROSS_CC_ARM64)" \
+	CC=zig-cc-aarch64-macos \
 	$(GO_BUILD) -o $(DIST_DIR)/vox-darwin-arm64 ./cmd/vox
 
 # Help
