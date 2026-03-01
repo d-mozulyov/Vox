@@ -51,10 +51,11 @@ RUN wget -q https://github.com/joseluisq/macosx-sdks/releases/download/${MACOSX_
     tar -xJf MacOSX${MACOSX_SDK_VERSION}.sdk.tar.xz -C /opt && \
     rm MacOSX${MACOSX_SDK_VERSION}.sdk.tar.xz
 
-# Create zig-cc wrapper scripts for macOS targets (with SDK sysroot)
-RUN for target in x86_64-macos aarch64-macos; do \
-    printf '#!/bin/sh\nexec zig cc -target %s -isysroot /opt/MacOSX%s.sdk "$@"\n' \
-    "$target" "${MACOSX_SDK_VERSION}" \
+# Create zig-cc wrapper scripts for macOS targets (with SDK sysroot + framework path)
+RUN SDK=/opt/MacOSX${MACOSX_SDK_VERSION}.sdk && \
+    for target in x86_64-macos aarch64-macos; do \
+    printf '#!/bin/sh\nexec zig cc -target %s --sysroot=%s -F%s/System/Library/Frameworks -I%s/usr/include "$@"\n' \
+    "$target" "$SDK" "$SDK" "$SDK" \
     > /usr/local/bin/zig-cc-${target} && \
     chmod +x /usr/local/bin/zig-cc-${target}; \
     done
@@ -86,6 +87,9 @@ RUN go version && \
     zig version && \
     make --version && \
     gcc --version && \
-    echo "=== Zig CC wrappers ===" && ls /usr/local/bin/zig-cc-*
+    echo "=== Zig CC wrappers ===" && \
+    for f in /usr/local/bin/zig-cc-*; do echo "--- $f ---"; cat "$f"; done && \
+    echo "=== macOS SDK check ===" && \
+    ls /opt/MacOSX*.sdk/System/Library/Frameworks/Cocoa.framework/Headers/Cocoa.h
 
 CMD ["/bin/bash"]
