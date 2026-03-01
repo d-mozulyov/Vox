@@ -58,7 +58,7 @@ Global hotkey registration and handling using golang-design/hotkey library.
 Coordinates visual (icon changes) and audio (sound playback) feedback for state transitions.
 
 ### internal/audio
-Audio playback functionality using faiface/beep library for playing feedback sounds.
+Audio playback functionality using ebitengine/oto library for playing feedback sounds.
 
 ### internal/platform
 Platform-specific abstractions and utilities, including logging infrastructure.
@@ -73,22 +73,27 @@ Static assets including icons and sound files. See README files in subdirectorie
 
 - **github.com/getlantern/systray** - Cross-platform system tray support
 - **golang.design/x/hotkey** - Global hotkey registration
-- **github.com/faiface/beep** - Audio playback
+- **github.com/ebitengine/oto/v3** - Audio playback
 
 ## Build
 
 ```bash
-# Build for current platform
-go build -o bin/vox ./cmd/vox
+# Build for all platforms
+make all
+
+# Build for specific platform
+make windows-amd64
+make linux-amd64
+make darwin-arm64
 
 # Run tests
-go test ./...
+make test
 
-# Cross-compile (examples)
-GOOS=linux GOARCH=amd64 go build -o bin/vox-linux-amd64 ./cmd/vox
-GOOS=windows GOARCH=amd64 go build -o bin/vox-windows-amd64.exe ./cmd/vox
-GOOS=darwin GOARCH=arm64 go build -o bin/vox-darwin-arm64 ./cmd/vox
+# Clean build artifacts
+make clean
 ```
+
+For Docker-based builds and cross-compilation details, see `docker/builder/README.md`.
 
 ## Next Steps
 

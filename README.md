@@ -71,22 +71,21 @@ go build -o vox ./cmd/vox
 Vox supports building for all platforms (Windows, Linux, macOS) on x64 and arm64 architectures:
 
 ```bash
-# Build for all platforms using Makefile
-make build-all
-
-# Build for all platforms using PowerShell
-.\build.ps1 -Platform all
+# Build for all platforms
+make all
 
 # Build for specific platform
+make windows-amd64
 make linux-amd64
-.\build.ps1 -Platform linux -Arch amd64
-```
+make darwin-arm64
 
-For detailed build instructions, including musl support for Linux and CI/CD setup, see [BUILD.md](BUILD.md).
+# Clean build artifacts
+make clean
+```
 
 ### Docker Build Environment
 
-The project uses Docker for optimized CI/CD builds. Contributors and forks can use the official Docker image or build their own. See [docs/DOCKER_BUILD.md](docs/DOCKER_BUILD.md) for details.
+The project uses Docker for consistent cross-platform builds with CGO support. The build environment is based on `ghcr.io/powertech-center/alpine-go` with project-specific dependencies. See [docker/builder/README.md](docker/builder/README.md) for details.
 
 ## Contributing
 
