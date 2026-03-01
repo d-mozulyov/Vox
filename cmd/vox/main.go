@@ -139,6 +139,8 @@ func run() error {
 
 		// Hotkey callback - toggles state
 		hotkeyCallback := func() {
+			logger.Info("Hotkey pressed: %s", hk.String())
+
 			currentState := stateMachine.GetState()
 			var nextState state.State
 
