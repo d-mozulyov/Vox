@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/d-mozulyov/vox/internal/hotkey"
 	"github.com/d-mozulyov/vox/internal/indicator"
@@ -160,6 +161,18 @@ func run() error {
 				logger.Error("Error transitioning state: %v", err)
 			} else {
 				logger.Info("State transitioned: %s -> %s", currentState, nextState)
+
+				// If we just transitioned to Processing, schedule automatic transition to Idle
+				if nextState == state.StateProcessing {
+					go func() {
+						time.Sleep(1 * time.Second)
+						if err := stateMachine.Transition(state.StateIdle); err != nil {
+							logger.Error("Error auto-transitioning from Processing to Idle: %v", err)
+						} else {
+							logger.Info("Auto-transitioned: Processing -> Idle")
+						}
+					}()
+				}
 			}
 		}
 
