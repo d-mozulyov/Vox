@@ -39,6 +39,10 @@ type TrayManager interface {
 	// SetTooltip updates the tooltip text shown when hovering over the icon
 	SetTooltip(text string) error
 
+	// UpdateToggleMenuItem updates the Start/Stop menu item based on current state
+	// isRecording: true for "Stop", false for "Start"
+	UpdateToggleMenuItem(isRecording bool)
+
 	// Run starts the tray event loop (blocking call)
 	// This should be called in the main goroutine
 	Run()
@@ -49,10 +53,12 @@ type TrayManager interface {
 
 // trayManager implements the TrayManager interface using getlantern/systray
 type trayManager struct {
-	onReady func()
-	onExit  func()
+	onReady        func()
+	onExit         func()
+	onToggleRecord func() // Callback for Start/Stop button
 
 	// Menu items
+	menuToggle   *systray.MenuItem
 	menuSettings *systray.MenuItem
 	menuExit     *systray.MenuItem
 }
@@ -60,17 +66,22 @@ type trayManager struct {
 // NewTrayManager creates a new tray manager instance
 // onReady is called when the tray is initialized and ready
 // onExit is called when the user selects "Exit" from the menu
-func NewTrayManager(onReady func(), onExit func()) TrayManager {
+// onToggleRecord is called when the user clicks Start/Stop menu item
+func NewTrayManager(onReady func(), onExit func(), onToggleRecord func()) TrayManager {
 	if onReady == nil {
 		onReady = func() {}
 	}
 	if onExit == nil {
 		onExit = func() {}
 	}
+	if onToggleRecord == nil {
+		onToggleRecord = func() {}
+	}
 
 	return &trayManager{
-		onReady: onReady,
-		onExit:  onExit,
+		onReady:        onReady,
+		onExit:         onExit,
+		onToggleRecord: onToggleRecord,
 	}
 }
 
@@ -113,6 +124,9 @@ func (tm *trayManager) onReadyWrapper() {
 	logger.Info("Tray tooltip set")
 
 	// Create menu items
+	tm.menuToggle = systray.AddMenuItem("Start", "Start voice recording")
+	logger.Info("Toggle menu item created (Start)")
+
 	tm.menuSettings = systray.AddMenuItem("Settings", "Open settings window")
 	tm.menuSettings.Disable() // Placeholder - will be enabled in future
 	logger.Info("Settings menu item created (disabled)")
@@ -143,6 +157,10 @@ func (tm *trayManager) handleMenuClicks() {
 	logger := platform.GetLogger()
 	for {
 		select {
+		case <-tm.menuToggle.ClickedCh:
+			logger.Info("Toggle menu item clicked")
+			tm.onToggleRecord()
+
 		case <-tm.menuSettings.ClickedCh:
 			// Placeholder for future settings window
 			logger.Info("Settings clicked (not implemented yet)")
@@ -152,6 +170,21 @@ func (tm *trayManager) handleMenuClicks() {
 			tm.Quit()
 			return
 		}
+	}
+}
+
+// UpdateToggleMenuItem updates the Start/Stop menu item based on current state
+func (tm *trayManager) UpdateToggleMenuItem(isRecording bool) {
+	if tm.menuToggle == nil {
+		return
+	}
+
+	if isRecording {
+		tm.menuToggle.SetTitle("Stop")
+		tm.menuToggle.SetTooltip("Stop voice recording")
+	} else {
+		tm.menuToggle.SetTitle("Start")
+		tm.menuToggle.SetTooltip("Start voice recording")
 	}
 }
 

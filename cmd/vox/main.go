@@ -100,6 +100,26 @@ func run() error {
 	// Variable to hold tray manager (will be initialized in onReady)
 	var trayManager tray.TrayManager
 
+	// toggleRecording is the callback for Start/Stop menu item and hotkey
+	toggleRecording := func() {
+		currentState := stateMachine.GetState()
+		var nextState state.State
+
+		// Toggle between Idle and Recording
+		switch currentState {
+		case state.StateIdle:
+			nextState = state.StateRecording
+		case state.StateRecording:
+			nextState = state.StateIdle
+		}
+
+		if err := stateMachine.Transition(nextState); err != nil {
+			logger.Error("Error transitioning state: %v", err)
+		} else {
+			logger.Info("State transitioned: %s -> %s", currentState, nextState)
+		}
+	}
+
 	// onReady callback - called when tray is initialized
 	onReady := func() {
 		logger.Info("Tray is ready, initializing components...")
@@ -131,6 +151,13 @@ func run() error {
 		stateMachine.Subscribe(indicatorManager.OnStateChange)
 		logger.Info("Indicator manager subscribed to state changes")
 
+		// Subscribe to state changes to update tray menu
+		stateMachine.Subscribe(func(oldState, newState state.State) {
+			isRecording := newState == state.StateRecording
+			trayManager.UpdateToggleMenuItem(isRecording)
+		})
+		logger.Info("Tray menu subscribed to state changes")
+
 		// Register hotkey Alt+Shift+V
 		hk := hotkey.Hotkey{
 			Modifiers: []hotkey.Modifier{hotkey.ModAlt, hotkey.ModShift},
@@ -140,23 +167,7 @@ func run() error {
 		// Hotkey callback - toggles between Idle and Recording states
 		hotkeyCallback := func() {
 			logger.Info("Hotkey pressed: %s", hk.String())
-
-			currentState := stateMachine.GetState()
-			var nextState state.State
-
-			// Toggle between Idle and Recording
-			switch currentState {
-			case state.StateIdle:
-				nextState = state.StateRecording
-			case state.StateRecording:
-				nextState = state.StateIdle
-			}
-
-			if err := stateMachine.Transition(nextState); err != nil {
-				logger.Error("Error transitioning state: %v", err)
-			} else {
-				logger.Info("State transitioned: %s -> %s", currentState, nextState)
-			}
+			toggleRecording()
 		}
 
 		// Register the hotkey
@@ -176,7 +187,7 @@ func run() error {
 	}
 
 	// Initialize Tray Manager
-	trayManager = tray.NewTrayManager(onReady, onExit)
+	trayManager = tray.NewTrayManager(onReady, onExit, toggleRecording)
 	logger.Info("Tray manager created")
 
 	// Run tray (blocking call)
