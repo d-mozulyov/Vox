@@ -33,7 +33,7 @@ clean:
 # Run tests
 test:
 	@echo "Running tests..."
-	@go test ./...
+	@Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 & export DISPLAY=:99.0 && sleep 1 && go test ./internal/... ./pkg/...
 	@echo "Tests complete!"
 
 # Create dist directory

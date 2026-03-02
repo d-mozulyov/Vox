@@ -5,10 +5,12 @@
 FROM ghcr.io/powertech-center/alpine-go:latest
 
 # Project-specific: Linux x64 dev libraries for CGo (ALSA for audio, X11 for hotkeys)
+# xvfb is needed for running tests in headless environment (hotkey library initializes X11 in init())
 RUN apk add --no-cache \
     alsa-lib-dev \
     libx11-dev \
-    musl-fts-dev
+    musl-fts-dev \
+    xvfb
 
 # Project-specific: ARM64 sysroot with dev libraries for Linux ARM64 cross-compilation
 RUN mkdir -p /opt/aarch64-sysroot/etc/apk && \
