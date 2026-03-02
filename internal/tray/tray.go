@@ -22,8 +22,8 @@ package tray
 import (
 	"fmt"
 
+	"fyne.io/systray"
 	"github.com/d-mozulyov/vox/internal/platform"
-	"github.com/getlantern/systray"
 )
 
 // TrayManager defines the interface for managing system tray icon and menu

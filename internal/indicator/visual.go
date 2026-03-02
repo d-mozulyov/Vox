@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/d-mozulyov/vox/internal/platform"
 	"github.com/d-mozulyov/vox/internal/state"
@@ -55,17 +56,39 @@ func NewVisualIndicator(iconSetter IconSetter, iconsPath string) (VisualIndicato
 }
 
 // loadIcons loads icon files from the specified directory
-// Icons are loaded in multiple sizes (16x16, 32x32, 64x64) for different DPI settings
-// The system will automatically select the appropriate size based on display settings
+// On Windows, ICO format is required. On other platforms, PNG is used.
 func (vi *visualIndicator) loadIcons(iconsPath string) error {
 	logger := platform.GetLogger()
 
-	// Use 32x32 as the default size for system tray icons
-	// This is a good balance for most displays and DPI settings
-	iconFiles := map[state.State]string{
-		state.StateIdle:       "idle_32.png",
-		state.StateRecording:  "recording_32.png",
-		state.StateProcessing: "processing_32.png",
+	// Determine icon extension and filename based on platform
+	var iconFiles map[state.State]string
+
+	if runtime.GOOS == "windows" {
+		// Windows: use ICO files (contain multiple sizes)
+		iconFiles = map[state.State]string{
+			state.StateIdle:      "idle.ico",
+			state.StateRecording: "recording.ico",
+		}
+	} else if runtime.GOOS == "darwin" {
+		// macOS: detect Retina and use appropriate size
+		var size string
+		if isRetina() {
+			size = "44" // Retina: use 44px for @2x
+			logger.Info("Retina display detected, using 44px icons")
+		} else {
+			size = "22" // Non-Retina: use 22px
+			logger.Info("Non-Retina display detected, using 22px icons")
+		}
+		iconFiles = map[state.State]string{
+			state.StateIdle:      "idle_" + size + ".png",
+			state.StateRecording: "recording_" + size + ".png",
+		}
+	} else {
+		// Linux: use 24px
+		iconFiles = map[state.State]string{
+			state.StateIdle:      "idle_24.png",
+			state.StateRecording: "recording_24.png",
+		}
 	}
 
 	logger.Info("Loading icons from: %s", iconsPath)

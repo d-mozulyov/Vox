@@ -4,7 +4,7 @@ package platform
 // These imports will be used in subsequent tasks
 
 import (
+	_ "fyne.io/systray"
 	_ "github.com/ebitengine/oto/v3"
-	_ "github.com/getlantern/systray"
 	_ "golang.design/x/hotkey"
 )

@@ -8,8 +8,6 @@ const (
 	StateIdle State = iota
 	// StateRecording represents the recording state - voice recording is in progress
 	StateRecording
-	// StateProcessing represents the processing state - recorded audio is being processed
-	StateProcessing
 )
 
 // String returns the string representation of the state
@@ -19,8 +17,6 @@ func (s State) String() string {
 		return "Idle"
 	case StateRecording:
 		return "Recording"
-	case StateProcessing:
-		return "Processing"
 	default:
 		return "Unknown"
 	}

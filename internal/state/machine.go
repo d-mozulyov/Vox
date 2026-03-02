@@ -67,15 +67,12 @@ func (sm *stateMachine) Subscribe(callback func(oldState, newState State)) {
 // isValidTransition checks if a state transition is valid
 // Valid transitions:
 // - Idle -> Recording (start recording via hotkey)
-// - Recording -> Processing (stop recording via hotkey)
-// - Processing -> Idle (processing complete, automatic)
+// - Recording -> Idle (stop recording via hotkey)
 func (sm *stateMachine) isValidTransition(from, to State) bool {
 	switch from {
 	case StateIdle:
 		return to == StateRecording
 	case StateRecording:
-		return to == StateProcessing
-	case StateProcessing:
 		return to == StateIdle
 	default:
 		return false

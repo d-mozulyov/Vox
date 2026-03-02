@@ -137,21 +137,19 @@ func run() error {
 			Key:       hotkey.KeyV,
 		}
 
-		// Hotkey callback - toggles state
+		// Hotkey callback - toggles between Idle and Recording states
 		hotkeyCallback := func() {
+			logger.Info("Hotkey pressed: %s", hk.String())
+
 			currentState := stateMachine.GetState()
 			var nextState state.State
 
+			// Toggle between Idle and Recording
 			switch currentState {
 			case state.StateIdle:
 				nextState = state.StateRecording
 			case state.StateRecording:
-				nextState = state.StateProcessing
-			case state.StateProcessing:
-				// Processing state transitions to Idle automatically
-				// Hotkey press during processing is ignored
-				logger.Info("Hotkey pressed during processing, ignoring")
-				return
+				nextState = state.StateIdle
 			}
 
 			if err := stateMachine.Transition(nextState); err != nil {
@@ -189,8 +187,22 @@ func run() error {
 }
 
 // getAssetsPath returns the path to the assets directory
+// It tries multiple locations in the following order:
+// 1. Current working directory (development mode)
+// 2. Next to executable (production mode)
+// 3. Parent directory of executable (some build configurations)
 func getAssetsPath() string {
 	logger := platform.GetLogger()
+
+	// Try current working directory first (development mode)
+	cwd, err := os.Getwd()
+	if err == nil {
+		assetsPath := filepath.Join(cwd, "assets")
+		if _, err := os.Stat(assetsPath); err == nil {
+			logger.Info("Assets found in working directory: %s", assetsPath)
+			return assetsPath
+		}
+	}
 
 	// Try to find assets directory relative to executable
 	exePath, err := os.Executable()
@@ -204,18 +216,22 @@ func getAssetsPath() string {
 	// Check if assets directory exists next to executable
 	assetsPath := filepath.Join(exeDir, "assets")
 	if _, err := os.Stat(assetsPath); err == nil {
+		logger.Info("Assets found next to executable: %s", assetsPath)
 		return assetsPath
 	}
 
-	// Check if assets directory exists in parent directory (development mode)
+	// Check if assets directory exists in parent directory
 	assetsPath = filepath.Join(exeDir, "..", "assets")
 	if _, err := os.Stat(assetsPath); err == nil {
+		logger.Info("Assets found in parent directory: %s", assetsPath)
 		return assetsPath
 	}
 
 	// Default to "assets" relative to current directory
+	logger.Warn("Assets directory not found, using default: assets")
 	return "assets"
 }
+
 
 func printHelp() {
 	fmt.Println("\nUsage:")

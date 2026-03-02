@@ -2,27 +2,51 @@
 
 This directory contains the system tray icons for different application states.
 
-## Available Icons
+## Icon Design
 
-- `idle_16.png`, `idle_32.png`, `idle_64.png` - Gray microphone icon (inactive state)
-- `recording_16.png`, `recording_32.png`, `recording_64.png` - Purple microphone icon (recording state)
-- `processing_16.png`, `processing_32.png`, `processing_64.png` - Purple microphone with indicator dot (processing state)
-
-## Icon Specifications
-
-- **Format**: PNG with transparency
-- **Sizes**: 16x16, 32x32, 64x64 pixels (for different DPI settings)
-- **Color scheme**: 
+- **Simple rounded rectangle** - maximizes visibility in system tray
+- **Edge-to-edge design** - uses 95% of canvas for maximum impact
+- **No shadows or complex details** - clean, bold appearance
+- **Color scheme**:
   - Idle: Gray (#808080)
-  - Active states: Purple (#8A2BE2) - matching Kiro style
-  - Indicator: White (#FFFFFF)
-- **Naming convention**: `{state}_{size}.png`
+  - Recording: Purple (#8A2BE2) - matching Kiro style
+  - Recording indicator: Red dot in top-right corner
 
-## Current Status
+## Platform-Specific Icons
 
-Basic placeholder icons have been generated programmatically. These are simple geometric representations:
-- Microphone body (rounded rectangle)
-- Microphone base (vertical line with stand)
-- Processing indicator (white dot in corner)
+### Windows
+- **Files**: `idle_32.ico`, `recording_32.ico`
+- **Format**: ICO with embedded sizes: 16x16, 24x24, 32x32, 48x48
+- Windows automatically selects the appropriate size based on DPI
 
-These icons are functional but can be replaced with professionally designed icons by a designer for better visual quality.
+### macOS
+- **Normal DPI**: `idle_22.png`, `recording_22.png` (22x22)
+- **Retina**: `idle_44.png`, `recording_44.png` (44x44)
+
+### Linux
+- **Files**: `idle_24.png`, `recording_24.png` (24x24)
+
+## Available Sizes
+
+All PNG sizes generated: 16, 22, 24, 32, 44, 48
+
+## Regenerating Icons
+
+To regenerate all icons:
+```bash
+python generate_icons.py
+```
+
+This will:
+1. Generate all PNG files for all sizes
+2. Create Windows ICO files with multiple embedded sizes
+
+You can manually edit PNG files and re-run the script to regenerate ICO files from your edited PNGs.
+
+## Icon Generation Script
+
+The `generate_icons.py` script:
+- Creates simple, bold microphone icons
+- Generates all required sizes for all platforms
+- Automatically creates Windows ICO files with multiple layers
+- Can be re-run after manual PNG edits to update ICO files

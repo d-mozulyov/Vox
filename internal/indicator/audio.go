@@ -77,14 +77,13 @@ func (ai *audioIndicator) PlaySound(from, to state.State) error {
 
 // getSoundFilename returns the sound filename for a state transition
 func (ai *audioIndicator) getSoundFilename(from, to state.State) string {
+	// Play start_recording.wav when starting recording (Idle -> Recording)
 	if from == state.StateIdle && to == state.StateRecording {
 		return "start_recording.wav"
 	}
-	if from == state.StateRecording && to == state.StateProcessing {
+	// Play stop_recording.wav when stopping recording (Recording -> Idle)
+	if from == state.StateRecording && to == state.StateIdle {
 		return "stop_recording.wav"
-	}
-	if from == state.StateProcessing && to == state.StateIdle {
-		return "processing_done.wav"
 	}
 	return ""
 }
