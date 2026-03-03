@@ -76,6 +76,7 @@ darwin-amd64: $(DIST_DIR)
 	@CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 \
 	CC=zig-cc-x86_64-macos \
 	$(GO_BUILD) -o $(DIST_DIR)/vox-darwin-amd64 ./cmd/vox
+	@rm -f ./-.o 2>/dev/null || true
 
 # macOS arm64
 darwin-arm64: $(DIST_DIR)
@@ -83,6 +84,7 @@ darwin-arm64: $(DIST_DIR)
 	@CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 \
 	CC=zig-cc-aarch64-macos \
 	$(GO_BUILD) -o $(DIST_DIR)/vox-darwin-arm64 ./cmd/vox
+	@rm -f ./-.o 2>/dev/null || true
 
 # Help
 help:

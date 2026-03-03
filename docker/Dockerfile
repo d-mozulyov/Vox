@@ -1,8 +1,8 @@
 # Vox Builder Image
 # Cross-compiles Vox for all 6 target platforms
-# Inherits Zig cross-compilation and Go from powertech-center/alpine-go
+# Inherits Zig cross-compilation and Go from powertech-center/alpine-cross-go
 
-FROM ghcr.io/powertech-center/alpine-go:latest
+FROM ghcr.io/powertech-center/alpine-cross-go:latest
 
 # Project-specific: Linux x64 dev libraries for CGo (ALSA for audio, X11 for hotkeys)
 # xvfb is needed for running tests in headless environment (hotkey library initializes X11 in init())
