@@ -1,5 +1,7 @@
 # Vox Build Configuration
-# This Makefile provides targets for building Vox on all supported platforms
+# Cross-compilation for all 6 target platforms
+# Smart compiler wrappers auto-inject -fuse-ld=lld when linking is needed.
+# No CGO_LDFLAGS required — wrappers handle everything.
 
 # Global settings
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
@@ -12,14 +14,14 @@ DIST_DIR := dist
 # Go build command
 GO_BUILD := go build -buildvcs=false -ldflags "$(LDFLAGS)"
 
-# ARM64 cross-compilation sysroot (populated in Docker builder image)
-AARCH64_SYSROOT := /opt/aarch64-sysroot
-
 # Targets
-.PHONY: all clean test windows-amd64 windows-arm64 linux-amd64 linux-arm64 darwin-amd64 darwin-arm64
+.PHONY: all clean test \
+	windows-x64 windows-arm64 \
+	linux-x64 linux-arm64 \
+	darwin-x64 darwin-arm64
 
 # Build all platforms
-all: windows-amd64 windows-arm64 linux-amd64 linux-arm64 darwin-amd64 darwin-arm64
+all: linux-x64 linux-arm64 darwin-x64 darwin-arm64 windows-x64 windows-arm64
 	@echo "================================"
 	@echo "Build complete! Version: $(VERSION)"
 	@ls -lh $(DIST_DIR)/
@@ -40,51 +42,47 @@ test:
 $(DIST_DIR):
 	@mkdir -p $(DIST_DIR)
 
-# Windows amd64
-windows-amd64: $(DIST_DIR)
-	@echo "Building for Windows amd64..."
-	@CGO_ENABLED=1 GOOS=windows GOARCH=amd64 \
-	CC=zig-cc-x86_64-windows-gnu \
-	$(GO_BUILD) -o $(DIST_DIR)/vox-windows-amd64.exe ./cmd/vox
+# === Linux ===
 
-# Windows arm64
-windows-arm64: $(DIST_DIR)
-	@echo "Building for Windows arm64..."
-	@CGO_ENABLED=1 GOOS=windows GOARCH=arm64 \
-	CC=zig-cc-aarch64-windows-gnu \
-	$(GO_BUILD) -o $(DIST_DIR)/vox-windows-arm64.exe ./cmd/vox
+linux-x64: $(DIST_DIR)
+	@echo "Building for Linux x64..."
+	@CGO_ENABLED=1 GOOS=linux GOARCH=amd64 \
+		CC=clang-x86_64-linux-musl \
+		$(GO_BUILD) -o $(DIST_DIR)/vox-linux-x64 ./cmd/vox
 
-# Linux amd64
-linux-amd64: $(DIST_DIR)
-	@echo "Building for Linux amd64..."
-	@CGO_ENABLED=1 GOOS=linux GOARCH=amd64 $(GO_BUILD) -o $(DIST_DIR)/vox-linux-amd64 ./cmd/vox
-
-# Linux arm64
 linux-arm64: $(DIST_DIR)
-	@echo "Building for Linux arm64..."
+	@echo "Building for Linux ARM64..."
 	@CGO_ENABLED=1 GOOS=linux GOARCH=arm64 \
-	CC=zig-cc-aarch64-linux-musl \
-	PKG_CONFIG_LIBDIR=$(AARCH64_SYSROOT)/usr/lib/pkgconfig:$(AARCH64_SYSROOT)/usr/share/pkgconfig \
-	PKG_CONFIG_SYSROOT_DIR=$(AARCH64_SYSROOT) \
-	CGO_CFLAGS="-I$(AARCH64_SYSROOT)/usr/include" \
-	CGO_LDFLAGS="-L$(AARCH64_SYSROOT)/usr/lib -L$(AARCH64_SYSROOT)/lib" \
-	$(GO_BUILD) -o $(DIST_DIR)/vox-linux-arm64 ./cmd/vox
+		CC=clang-aarch64-linux-musl \
+		$(GO_BUILD) -o $(DIST_DIR)/vox-linux-arm64 ./cmd/vox
 
-# macOS amd64
-darwin-amd64: $(DIST_DIR)
-	@echo "Building for macOS amd64..."
+# === macOS ===
+
+darwin-x64: $(DIST_DIR)
+	@echo "Building for macOS x64..."
 	@CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 \
-	CC=zig-cc-x86_64-macos \
-	$(GO_BUILD) -o $(DIST_DIR)/vox-darwin-amd64 ./cmd/vox
-	@rm -f ./-.o 2>/dev/null || true
+		CC=clang-x86_64-apple-darwin \
+		$(GO_BUILD) -o $(DIST_DIR)/vox-darwin-x64 ./cmd/vox
 
-# macOS arm64
 darwin-arm64: $(DIST_DIR)
-	@echo "Building for macOS arm64..."
+	@echo "Building for macOS ARM64..."
 	@CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 \
-	CC=zig-cc-aarch64-macos \
-	$(GO_BUILD) -o $(DIST_DIR)/vox-darwin-arm64 ./cmd/vox
-	@rm -f ./-.o 2>/dev/null || true
+		CC=clang-aarch64-apple-darwin \
+		$(GO_BUILD) -o $(DIST_DIR)/vox-darwin-arm64 ./cmd/vox
+
+# === Windows ===
+
+windows-x64: $(DIST_DIR)
+	@echo "Building for Windows x64..."
+	@CGO_ENABLED=1 GOOS=windows GOARCH=amd64 \
+		CC=clang-x86_64-windows-gnu \
+		$(GO_BUILD) -o $(DIST_DIR)/vox-windows-x64.exe ./cmd/vox
+
+windows-arm64: $(DIST_DIR)
+	@echo "Building for Windows ARM64..."
+	@CGO_ENABLED=1 GOOS=windows GOARCH=arm64 \
+		CC=clang-aarch64-windows-gnu \
+		$(GO_BUILD) -o $(DIST_DIR)/vox-windows-arm64.exe ./cmd/vox
 
 # Help
 help:
@@ -95,17 +93,9 @@ help:
 	@echo "  all            - Build for all platforms (default)"
 	@echo "  clean          - Remove build artifacts"
 	@echo "  test           - Run tests"
-	@echo "  windows-amd64  - Build for Windows x64"
-	@echo "  windows-arm64  - Build for Windows ARM64"
-	@echo "  linux-amd64    - Build for Linux x64"
+	@echo "  linux-x64      - Build for Linux x64"
 	@echo "  linux-arm64    - Build for Linux ARM64"
-	@echo "  darwin-amd64   - Build for macOS x64"
+	@echo "  darwin-x64     - Build for macOS x64"
 	@echo "  darwin-arm64   - Build for macOS ARM64"
-	@echo ""
-	@echo "Environment variables:"
-	@echo "  VERSION        - Version string (default: git describe)"
-	@echo ""
-	@echo "Examples:"
-	@echo "  make all                    - Build all platforms"
-	@echo "  make windows-amd64          - Build only Windows x64"
-	@echo "  make VERSION=1.0.0 all      - Build with specific version"
+	@echo "  windows-x64    - Build for Windows x64"
+	@echo "  windows-arm64  - Build for Windows ARM64"
