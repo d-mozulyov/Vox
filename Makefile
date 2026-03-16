@@ -1,5 +1,6 @@
 # Vox Build Configuration
 # Cross-compilation for all 6 target platforms
+# CC is set via CGO_CC_<goos>_<goarch> env vars from alpine-cross-go.
 # Smart compiler wrappers auto-inject -fuse-ld=lld when linking is needed.
 # No CGO_LDFLAGS required — wrappers handle everything.
 
@@ -18,10 +19,10 @@ GO_BUILD := go build -buildvcs=false -ldflags "$(LDFLAGS)"
 .PHONY: all clean test \
 	windows-x64 windows-arm64 \
 	linux-x64 linux-arm64 \
-	darwin-x64 darwin-arm64
+	macos-x64 macos-arm64
 
 # Build all platforms
-all: linux-x64 linux-arm64 darwin-x64 darwin-arm64 windows-x64 windows-arm64
+all: linux-x64 linux-arm64 macos-x64 macos-arm64 windows-x64 windows-arm64
 	@echo "================================"
 	@echo "Build complete! Version: $(VERSION)"
 	@ls -lh $(DIST_DIR)/
@@ -46,42 +47,42 @@ $(DIST_DIR):
 
 linux-x64: $(DIST_DIR)
 	@echo "Building for Linux x64..."
-	@CGO_ENABLED=1 GOOS=linux GOARCH=amd64 \
-		CC=clang-x86_64-linux-musl \
+	@GOOS=linux GOARCH=amd64 CGO_ENABLED=1 \
+		CC=$$CGO_CC_linux_amd64 \
 		$(GO_BUILD) -o $(DIST_DIR)/vox-linux-x64 ./cmd/vox
 
 linux-arm64: $(DIST_DIR)
-	@echo "Building for Linux ARM64..."
-	@CGO_ENABLED=1 GOOS=linux GOARCH=arm64 \
-		CC=clang-aarch64-linux-musl \
+	@echo "Building for Linux arm64..."
+	@GOOS=linux GOARCH=arm64 CGO_ENABLED=1 \
+		CC=$$CGO_CC_linux_arm64 \
 		$(GO_BUILD) -o $(DIST_DIR)/vox-linux-arm64 ./cmd/vox
 
 # === macOS ===
 
-darwin-x64: $(DIST_DIR)
+macos-x64: $(DIST_DIR)
 	@echo "Building for macOS x64..."
-	@CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 \
-		CC=clang-x86_64-apple-darwin \
-		$(GO_BUILD) -o $(DIST_DIR)/vox-darwin-x64 ./cmd/vox
+	@GOOS=darwin GOARCH=amd64 CGO_ENABLED=1 \
+		CC=$$CGO_CC_darwin_amd64 \
+		$(GO_BUILD) -o $(DIST_DIR)/vox-macos-x64 ./cmd/vox
 
-darwin-arm64: $(DIST_DIR)
-	@echo "Building for macOS ARM64..."
-	@CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 \
-		CC=clang-aarch64-apple-darwin \
-		$(GO_BUILD) -o $(DIST_DIR)/vox-darwin-arm64 ./cmd/vox
+macos-arm64: $(DIST_DIR)
+	@echo "Building for macOS arm64..."
+	@GOOS=darwin GOARCH=arm64 CGO_ENABLED=1 \
+		CC=$$CGO_CC_darwin_arm64 \
+		$(GO_BUILD) -o $(DIST_DIR)/vox-macos-arm64 ./cmd/vox
 
 # === Windows ===
 
 windows-x64: $(DIST_DIR)
 	@echo "Building for Windows x64..."
-	@CGO_ENABLED=1 GOOS=windows GOARCH=amd64 \
-		CC=clang-x86_64-windows-gnu \
+	@GOOS=windows GOARCH=amd64 CGO_ENABLED=1 \
+		CC=$$CGO_CC_windows_amd64 \
 		$(GO_BUILD) -o $(DIST_DIR)/vox-windows-x64.exe ./cmd/vox
 
 windows-arm64: $(DIST_DIR)
-	@echo "Building for Windows ARM64..."
-	@CGO_ENABLED=1 GOOS=windows GOARCH=arm64 \
-		CC=clang-aarch64-windows-gnu \
+	@echo "Building for Windows arm64..."
+	@GOOS=windows GOARCH=arm64 CGO_ENABLED=1 \
+		CC=$$CGO_CC_windows_arm64 \
 		$(GO_BUILD) -o $(DIST_DIR)/vox-windows-arm64.exe ./cmd/vox
 
 # Help
@@ -94,8 +95,8 @@ help:
 	@echo "  clean          - Remove build artifacts"
 	@echo "  test           - Run tests"
 	@echo "  linux-x64      - Build for Linux x64"
-	@echo "  linux-arm64    - Build for Linux ARM64"
-	@echo "  darwin-x64     - Build for macOS x64"
-	@echo "  darwin-arm64   - Build for macOS ARM64"
+	@echo "  linux-arm64    - Build for Linux arm64"
+	@echo "  macos-x64      - Build for macOS x64"
+	@echo "  macos-arm64    - Build for macOS arm64"
 	@echo "  windows-x64    - Build for Windows x64"
-	@echo "  windows-arm64  - Build for Windows ARM64"
+	@echo "  windows-arm64  - Build for Windows arm64"
