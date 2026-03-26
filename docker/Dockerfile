@@ -3,7 +3,7 @@
 # Inherits clang cross-compilers, lld, xwin and Go from alpine-cross-go
 # Smart compiler wrappers auto-inject -fuse-ld=lld when linking is detected
 
-FROM ghcr.io/powertech-center/alpine-cross-go:latest
+FROM ghcr.io/powertech-center/alpine/cross-go:latest
 
 # Project-specific: Linux x64 dev libraries for CGo (ALSA for audio, X11 for hotkeys)
 # xvfb is needed for running tests in headless environment (hotkey library initializes X11 in init())
